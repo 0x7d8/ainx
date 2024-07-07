@@ -140,7 +140,7 @@ export default async function bundle(args: Args) {
 		' Installing:',
 		`  1. Run ainx install ${data.data.id}.ainx`,
 		' Updating:',
-		`  1. Run ainx update ${data.data.id}.ainx`,
+		`  1. Run ainx upgrade ${data.data.id}.ainx`,
 		' Removing:',
 		`  1. Run ainx remove ${data.data.id}`,
 		'',
@@ -148,7 +148,7 @@ export default async function bundle(args: Args) {
 		...files.includes('README.txt') ? [
 			await fs.promises.readFile('README.txt', 'utf-8')
 		] : []
-	].join('\n')))
+	].join('\n').trim()))
 
 	await zip.writeZipPromise(`${data.data.id}.zip`)
 
