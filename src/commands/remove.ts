@@ -94,8 +94,6 @@ export default async function remove(args: Args, skipRoutes: boolean = false) {
 
 				await new Promise((resolve) => cmd.on('close', resolve))
 			}
-
-			await fs.promises.rm(`.blueprint/extensions/${data.data.id}`, { recursive: true })
 		}
 
 		if (conf.requests?.routers?.client) {
@@ -109,7 +107,7 @@ export default async function remove(args: Args, skipRoutes: boolean = false) {
 			if (fs.existsSync(`app/BlueprintFramework/Extensions/${data.data.id}`)) await fs.promises.rm(`app/BlueprintFramework/Extensions/${data.data.id}`, { recursive: true })
 		}
 
-		if (conf.database?.migrations && fs.existsSync(`database/migrations-${data.data.id}`)) {
+		if (conf.database?.migrations && fs.existsSync(`database/migrations-${data.data.id}`) && args.migrate) {
 			await system.execute(`php artisan migrate:rollback --force --path=database/migrations-${data.data.id}`, { async: true })
 			await fs.promises.rm(`database/migrations-${data.data.id}`, { recursive: true })
 		}
