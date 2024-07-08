@@ -234,7 +234,7 @@ export default async function install(args: Args, skipRoutes: boolean = false) {
 			}
 		}
 
-		const installCmd = cp.spawn('yarn', ['install'], {
+		const installCmd = cp.spawn('bash', ['-c', '"yarn install"'], {
 			env: {
 				...process.env,
 				NODE_OPTIONS: '--openssl-legacy-provider'
@@ -247,7 +247,7 @@ export default async function install(args: Args, skipRoutes: boolean = false) {
 		if (conf.database?.migrations) await system.execute(`php artisan migrate --force --path=database/migrations-${data.data.id}`, { async: true })
 		
 		console.log(chalk.gray('Rebuilding assets... (this may take a while)'))
-		const cmd = cp.spawn('yarn', ['build:production'], {
+		const cmd = cp.spawn('bash', ['-c', '"yarn build:production"'], {
 			env: {
 				...process.env,
 				NODE_OPTIONS: '--openssl-legacy-provider'
