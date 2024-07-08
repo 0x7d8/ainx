@@ -251,9 +251,13 @@ export default async function install(args: Args, skipRoutes: boolean = false) {
 			env: {
 				...process.env,
 				NODE_OPTIONS: '--openssl-legacy-provider'
-			}, stdio: 'inherit',
+			}, stdio: 'pipe',
 			cwd: process.cwd()
 		})
+
+		cmd.stdout.pipe(process.stdout)
+		cmd.stderr.pipe(process.stderr)
+		process.stdin.pipe(cmd.stdin)
 
 		await new Promise((resolve) => cmd.on('close', resolve))
 		await fs.promises.rm('/tmp/ainx/addon', { recursive: true })
