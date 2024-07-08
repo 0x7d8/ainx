@@ -234,7 +234,7 @@ export default async function install(args: Args, skipRoutes: boolean = false) {
 			}
 		}
 
-		const installCmd = cp.spawn('bash', ['-c', '"yarn install"'], {
+		const installCmd = cp.spawn('yarn', ['install'], {
 			env: {
 				...process.env,
 				NODE_OPTIONS: '--openssl-legacy-provider'
@@ -247,7 +247,7 @@ export default async function install(args: Args, skipRoutes: boolean = false) {
 		if (conf.database?.migrations) await system.execute(`php artisan migrate --force --path=database/migrations-${data.data.id}`, { async: true })
 		
 		console.log(chalk.gray('Rebuilding assets... (this may take a while)'))
-		const cmd = cp.spawn('bash', ['-c', '"yarn build:production"'], {
+		const cmd = cp.spawn('yarn', ['build:production'], {
 			env: {
 				...process.env,
 				NODE_OPTIONS: '--openssl-legacy-provider'
@@ -262,14 +262,7 @@ export default async function install(args: Args, skipRoutes: boolean = false) {
 		await new Promise((resolve) => cmd.on('close', resolve))
 		await fs.promises.rm('/tmp/ainx/addon', { recursive: true })
 
-		await Promise.allSettled([
-			system.execute('php artisan route:clear', { async: true }),
-			system.execute('php artisan route:cache', { async: true }),
-			system.execute('php artisan config:clear', { async: true }),
-			system.execute('php artisan config:cache', { async: true }),
-			system.execute('php artisan view:clear', { async: true }),
-			system.execute('php artisan view:cache', { async: true })
-		])
+		await system.execute('php artisan optimize', { async: true })
 
 		if (!fs.existsSync(`.blueprint/extensions/${data.data.id}`)) await fs.promises.mkdir(`.blueprint/extensions/${data.data.id}`, { recursive: true })
 		await fs.promises.cp(args.file, `.blueprint/extensions/${data.data.id}/${data.data.id}.ainx`)
