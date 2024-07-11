@@ -112,7 +112,7 @@ export default async function remove(args: Args, skipRoutes: boolean = false) {
 			await fs.promises.rm(`database/migrations-${data.data.id}`, { recursive: true })
 		}
 
-		for (const step of data.data.installation.filter((step) => step.type === 'dashboard-route').concat(data.data.removal ?? [])) {
+		for (const step of data.data.installation.filter((step) => (step.type as any) === 'dashboard-route').concat(data.data.removal ?? [])) {
 			switch (step.type) {
 				case "copy": {
 					if (!fs.existsSync(step.destination)) await fs.promises.mkdir(step.destination, { recursive: true })

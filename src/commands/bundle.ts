@@ -144,6 +144,10 @@ export default async function bundle(args: Args) {
 		' Removing:',
 		`  1. Run ainx remove ${data.data.id}`,
 		'',
+		'(!) Manually migrate the database:',
+		' If you use a test panel before production you may need to migrate the database',
+		' manually depending on how you test, you can use this command:',
+		`  php artisan migrate --path=database/migrations-${data.data.id} --force`,
 		'',
 		...files.includes('README.txt') ? [
 			await fs.promises.readFile('README.txt', 'utf-8')

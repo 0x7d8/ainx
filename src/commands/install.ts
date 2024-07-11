@@ -245,7 +245,7 @@ export default async function install(args: Args, skipRoutes: boolean = false) {
 		await new Promise((resolve) => installCmd.on('close', resolve))
 
 		if (conf.database?.migrations) await system.execute(`php artisan migrate --force --path=database/migrations-${data.data.id}`, { async: true })
-		
+
 		console.log(chalk.gray('Rebuilding assets... (this may take a while)'))
 		const cmd = cp.spawn('yarn', ['build:production'], {
 			env: {
