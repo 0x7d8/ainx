@@ -21,6 +21,7 @@ export const step = z.union([
 		file: z.string().transform(panelFileTransformer),
 		search: z.string(),
 		replace: z.string(),
+		matches: z.string().array().optional(),
 		newline: z.boolean().optional(),
 		global: z.boolean().optional(),
 		unique: z.boolean().optional()
@@ -45,6 +46,7 @@ export const step = z.union([
 
 export const manifest = z.object({
 	id: z.string(),
+	hasRemove: z.string().optional(),
 	installation: step.array(),
 	removal: step.array().optional()
 })

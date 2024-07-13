@@ -141,9 +141,15 @@ export default async function install(args: Args, skipRoutes: boolean = false) {
 		for (const step of data.data.installation) {
 			switch (step.type) {
 				case "copy": {
-					if (!fs.existsSync(step.destination)) await fs.promises.mkdir(step.destination, { recursive: true })
+					if (fs.statSync(step.source).isDirectory()) {
+						if (!fs.existsSync(step.destination)) await fs.promises.mkdir(step.destination, { recursive: true })
 
-					await fs.promises.cp(step.source, step.destination, { recursive: true })
+						await fs.promises.cp(step.source, step.destination, { recursive: true })
+					} else {
+						await fs.promises.mkdir(path.dirname(step.destination), { recursive: true })
+						await fs.promises.cp(step.source, step.destination)
+					}
+
 					break
 				}
 
@@ -159,7 +165,8 @@ export default async function install(args: Args, skipRoutes: boolean = false) {
 					const content = await fs.promises.readFile(step.file, 'utf-8'),
 						replaceContent = step.newline ? `${step.replace}\n` : step.replace
 
-					if (step.unique && content.includes(step.replace)) break
+					if (step.unique && !step.matches && content.includes(step.replace)) break
+					else if (step.unique && step.matches && step.matches.some((match) => content.includes(match))) break
 
 					const replaced = step.global
 						? content.replaceAll(step.search, replaceContent)

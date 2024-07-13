@@ -38,6 +38,10 @@ export default async function bundle(args: Args) {
 			name: string
 			version: string
 		}
+
+		database?: {
+			migrations?: string
+		}
 	}
 
 	const zip = new AdmZip(),
@@ -144,11 +148,19 @@ export default async function bundle(args: Args) {
 		' Removing:',
 		`  1. Run ainx remove ${data.data.id}`,
 		'',
-		'(!) Manually migrate the database:',
-		' If you use a test panel before production you may need to migrate the database',
-		' manually depending on how you test, you can use this command:',
-		`  php artisan migrate --path=database/migrations-${data.data.id} --force`,
-		'',
+		...conf.database?.migrations ? [
+			'(!) Manually migrate the database:',
+			' If you use a test panel before production you may need to migrate the database',
+			' manually depending on how you test, you can use this command:',
+			`  php artisan migrate --path=database/migrations-${data.data.id} --force`,
+			'',
+		] : [],
+		...data.data.hasRemove ? [
+			'(!) Custom remove script:',
+			' This addon has a custom remove script you may need to run before installing/updating it with ainx, you can run it using',
+			`  bash ${data.data.hasRemove}`,
+			'',
+		] : [],
 		...files.includes('README.txt') ? [
 			await fs.promises.readFile('README.txt', 'utf-8')
 		] : []
