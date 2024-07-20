@@ -40,14 +40,13 @@ export default async function install(args: Args, skipRoutes: boolean = false) {
 			process.exit(1)
 		}
 
-		if (data.data.hasRemove) {
-			console.error(chalk.red('Addon has a remove script, please remove the addon first before installing with ainx'))
+		if (data.data.hasRemove && fs.existsSync(data.data.hasRemove)) {
+			console.error(chalk.red('Addon has a remove script, you may need to remove the addon first before installing with ainx'))
 			console.error(chalk.cyan(`bash ${data.data.hasRemove}`))
-			process.exit(1)
 		}
 
 		if (fs.existsSync(`.blueprint/extensions/${data.data.id}`) && !args.force) {
-			console.error(chalk.red('Addon already installed, update instead'))
+			console.error(chalk.red(`Addon already installed, update instead ${data.data.hasRemove ? 'and make sure you ran the remove script' : ''}`.trim()))
 			process.exit(1)
 		}
 
