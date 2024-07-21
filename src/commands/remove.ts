@@ -69,6 +69,7 @@ export default async function remove(args: Args, skipRoutes: boolean = false) {
 			}
 
 			data?: {
+				public?: string
 				directory?: string
 			}
 
@@ -79,6 +80,10 @@ export default async function remove(args: Args, skipRoutes: boolean = false) {
 
 		console.log(chalk.gray('Addon Name:'), chalk.green(conf.info.name))
 		console.log(chalk.gray('Addon Version:'), chalk.green(conf.info.version))
+
+		if (conf.data?.public) {
+			if (fs.existsSync(`public/extensions/${data.data.id}`)) await fs.promises.rm(`public/extensions/${data.data.id}`, { recursive: true })
+		}
 
 		if (conf.data?.directory) {
 			if (fs.existsSync(`.blueprint/extensions/${data.data.id}/private/remove.sh`)) {

@@ -81,6 +81,7 @@ export default async function install(args: Args, skipRoutes: boolean = false) {
 			}
 
 			data?: {
+				public?: string
 				directory?: string
 			}
 
@@ -91,6 +92,11 @@ export default async function install(args: Args, skipRoutes: boolean = false) {
 
 		console.log(chalk.gray('Addon Name:'), chalk.green(conf.info.name))
 		console.log(chalk.gray('Addon Version:'), chalk.green(conf.info.version))
+
+		if (conf.data?.public && !fs.existsSync(`public/extensions/${data.data.id}`)) {
+			await fs.promises.mkdir(`public/extensions/${data.data.id}`, { recursive: true })
+			await fs.promises.cp(path.join('/tmp/ainx/addon', conf.data.public), `public/extensions/${data.data.id}`, { recursive: true })
+		}
 
 		if (conf.data?.directory && !fs.existsSync(`.blueprint/extensions/${data.data.id}`)) {
 			await fs.promises.mkdir(`.blueprint/extensions/${data.data.id}`, { recursive: true })
