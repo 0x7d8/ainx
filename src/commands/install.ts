@@ -7,6 +7,7 @@ import yaml from "js-yaml"
 import path from "path"
 import { system } from "@rjweb/utils"
 import cp from "child_process"
+import rebuild from "src/commands/rebuild"
 
 export type Args = {
 	file: string
@@ -253,34 +254,11 @@ export default async function install(args: Args, skipRoutes: boolean = false) {
 			}
 		}
 
-		const installCmd = cp.spawn('yarn', ['install'], {
-			env: {
-				...process.env,
-				NODE_OPTIONS: '--openssl-legacy-provider'
-			}, stdio: 'inherit',
-			cwd: process.cwd()
-		})
-
-		await new Promise((resolve) => installCmd.on('close', resolve))
-
 		if (conf.database?.migrations) await system.execute(`php artisan migrate --force --path=database/migrations-${data.data.id}`, { async: true })
 
-		console.log(chalk.gray('Rebuilding assets... (this may take a while)'))
-		const cmd = cp.spawn('yarn', ['build:production'], {
-			env: {
-				...process.env,
-				NODE_OPTIONS: '--openssl-legacy-provider'
-			}, stdio: 'pipe',
-			cwd: process.cwd()
-		})
+		await rebuild({})
 
-		cmd.stdout.pipe(process.stdout)
-		cmd.stderr.pipe(process.stderr)
-		process.stdin.pipe(cmd.stdin)
-
-		await new Promise((resolve) => cmd.on('close', resolve))
 		await fs.promises.rm('/tmp/ainx/addon', { recursive: true })
-
 		await system.execute('php artisan optimize', { async: true })
 
 		if (!fs.existsSync(`.blueprint/extensions/${data.data.id}`)) await fs.promises.mkdir(`.blueprint/extensions/${data.data.id}`, { recursive: true })

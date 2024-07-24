@@ -8,6 +8,7 @@ import install from "src/commands/install"
 import remove from "src/commands/remove"
 import upgrade from "src/commands/upgrade"
 import bundle from "src/commands/bundle"
+import rebuild from "src/commands/rebuild"
 
 yargs(hideBin(process.argv))
   .version(pckgVersion)
@@ -58,6 +59,8 @@ yargs(hideBin(process.argv))
   (rg) => upgrade(rg))
   .command('bundle', 'bundle an addon', (yargs) => yargs,
   (rg) => bundle(rg))
+  .command('rebuild', 'rebuild panel ui', (yargs) => yargs,
+  (rg) => rebuild(rg))
   .strictCommands()
   .demandCommand(1)
   .parse()

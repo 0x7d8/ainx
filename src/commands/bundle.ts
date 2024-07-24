@@ -139,7 +139,7 @@ export default async function bundle(args: Args) {
 		'',
 		'If you are using ainx (standalone):',
 		' Install / Update ainx:',
-		'  ./install-ainx.sh',
+		'  bash ./install-ainx.sh',
 		'',
 		' Installing:',
 		`  1. Run ainx install ${data.data.id}.ainx`,

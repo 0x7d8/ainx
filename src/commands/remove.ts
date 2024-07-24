@@ -6,6 +6,7 @@ import { manifest } from "src/types/manifest"
 import yaml from "js-yaml"
 import { filesystem, system } from "@rjweb/utils"
 import cp from "child_process"
+import rebuild from "src/commands/rebuild"
 
 export type Args = {
 	addon: string
@@ -200,27 +201,12 @@ export default async function remove(args: Args, skipRoutes: boolean = false) {
 		}
 
 		if (args.rebuild) {
-			console.log(chalk.gray('Rebuilding assets... (this may take a while)'))
-			const cmd = cp.spawn('yarn', ['build:production'], {
-				env: {
-					...process.env,
-					NODE_OPTIONS: '--openssl-legacy-provider'
-				}, stdio: 'inherit',
-				cwd: process.cwd()
-			})
-
-			await new Promise((resolve) => cmd.on('close', resolve))
-			await Promise.allSettled([
-				system.execute('php artisan route:clear', { async: true }),
-				system.execute('php artisan route:cache', { async: true }),
-				system.execute('php artisan config:clear', { async: true }),
-				system.execute('php artisan config:cache', { async: true }),
-				system.execute('php artisan view:clear', { async: true }),
-				system.execute('php artisan view:cache', { async: true })
-			])
+			await rebuild({})
 		}
 
 		await fs.promises.rm('/tmp/ainx/addon', { recursive: true })
+		await system.execute('php artisan optimize', { async: true })
+
 		await fs.promises.rm(`.blueprint/extensions/${args.addon}`, { recursive: true })
 
 		console.log(chalk.green('Addon Removed'))
