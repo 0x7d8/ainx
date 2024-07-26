@@ -12,25 +12,31 @@ export default async function rebuild(args: Args) {
 	}
 
 	const installCmd = cp.spawn('yarn', ['install'], {
-		env: {
-			...process.env,
-			NODE_OPTIONS: '--openssl-legacy-provider'
-		}, stdio: 'inherit',
+		stdio: 'inherit',
 		cwd: process.cwd()
 	})
 
 	await new Promise((resolve) => installCmd.on('close', resolve))
 
 	console.log(chalk.gray('Rebuilding assets... (this may take a while)'))
-	const cmd = cp.spawn('yarn', ['build:production'], {
-		env: {
-			...process.env,
-			NODE_OPTIONS: nodeVersion > 16 ? '--openssl-legacy-provider' : ''
-		}, stdio: 'inherit',
-		cwd: process.cwd()
-	})
+	try {
+		const cmd = cp.spawn('yarn', ['build:production'], {
+			env: {
+				...process.env,
+				NODE_OPTIONS: '--openssl-legacy-provider'
+			}, stdio: 'inherit',
+			cwd: process.cwd()
+		})
 
-	await new Promise((resolve) => cmd.on('close', resolve))
+		await new Promise((resolve) => cmd.on('close', resolve))
+	} catch {
+		const cmd = cp.spawn('yarn', ['build:production'], {
+			stdio: 'inherit',
+			cwd: process.cwd()
+		})
+
+		await new Promise((resolve) => cmd.on('close', resolve))
+	}
 
 	console.log(chalk.green('Rebuild complete'))
 }
