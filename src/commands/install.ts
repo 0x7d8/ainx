@@ -131,12 +131,7 @@ export default async function install(args: Args, skipRoutes: boolean = false) {
 			if (fs.existsSync(`app/BlueprintFramework/Extensions/${data.data.id}`)) await fs.promises.rm(`app/BlueprintFramework/Extensions/${data.data.id}`, { recursive: true })
 
 			await fs.promises.mkdir(`app/BlueprintFramework/Extensions/${data.data.id}`, { recursive: true })
-
-			const controllers = await fs.promises.readdir(path.join('/tmp/ainx/addon', conf.requests.controllers))
-			for (const controller of controllers) {
-				const content = await fs.promises.readFile(path.join('/tmp/ainx/addon', conf.requests.controllers, controller))
-				await fs.promises.writeFile(`app/BlueprintFramework/Extensions/${data.data.id}/${controller}`, content)
-			}
+			await fs.promises.cp(path.join('/tmp/ainx/addon', conf.requests.controllers), `app/BlueprintFramework/Extensions/${data.data.id}`, { recursive: true })
 		}
 
 		if (conf.database?.migrations && !fs.existsSync(`database/migrations-${data.data.id}`)) {
