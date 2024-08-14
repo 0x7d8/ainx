@@ -29,6 +29,7 @@ export default async function rebuild(args: Args) {
 		})
 
 		await new Promise((resolve) => cmd.on('close', resolve))
+		await new Promise((_, reject) => cmd.on('error', reject))
 	} catch {
 		const cmd = cp.spawn('yarn', ['build:production'], {
 			stdio: 'inherit',
@@ -36,6 +37,7 @@ export default async function rebuild(args: Args) {
 		})
 
 		await new Promise((resolve) => cmd.on('close', resolve))
+		await new Promise((_, reject) => cmd.on('error', reject))
 	}
 
 	console.log(chalk.green('Rebuild complete'))

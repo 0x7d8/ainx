@@ -3,6 +3,7 @@ import fs from "fs"
 import AdmZip from "adm-zip"
 import { manifest } from "src/types/manifest"
 import yaml from "js-yaml"
+import path from "path"
 
 export type Args = {}
 
