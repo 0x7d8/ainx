@@ -254,7 +254,7 @@ export default async function install(args: Args, skipRoutes: boolean = false) {
 		await rebuild({})
 
 		await fs.promises.rm('/tmp/ainx/addon', { recursive: true })
-		await system.execute('php artisan optimize', { async: true })
+		await system.execute('php artisan optimize', { async: true }).catch(() => { })
 
 		if (!fs.existsSync(`.blueprint/extensions/${data.data.id}`)) await fs.promises.mkdir(`.blueprint/extensions/${data.data.id}`, { recursive: true })
 		await fs.promises.cp(args.file, `.blueprint/extensions/${data.data.id}/${data.data.id}.ainx`)
