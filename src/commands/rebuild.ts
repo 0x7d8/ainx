@@ -28,16 +28,20 @@ export default async function rebuild(args: Args) {
 			cwd: process.cwd()
 		})
 
-		await new Promise((resolve) => cmd.on('close', resolve))
-		await new Promise((_, reject) => cmd.on('error', reject))
+		await new Promise((resolve, reject) => {
+			cmd.on('close', resolve)
+			cmd.on('error', reject)
+		})
 	} catch {
 		const cmd = cp.spawn('yarn', ['build:production'], {
 			stdio: 'inherit',
 			cwd: process.cwd()
 		})
 
-		await new Promise((resolve) => cmd.on('close', resolve))
-		await new Promise((_, reject) => cmd.on('error', reject))
+		await new Promise((resolve, reject) => {
+			cmd.on('close', resolve)
+			cmd.on('error', reject)
+		})
 	}
 
 	console.log(chalk.green('Rebuild complete'))
