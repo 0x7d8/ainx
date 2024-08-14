@@ -14,8 +14,8 @@ export default async function upgrade(args: Args) {
 		process.exit(1)
 	}
 
-	if (!fs.existsSync(`.blueprint/extensions/${args.file.replace('.ainx', '')}`)) {
-		console.error(chalk.red('Addon is not installed, install instead'))
+	if (!fs.existsSync(`.blueprint/extensions/${args.file.replace('.ainx', '')}/${args.file}`)) {
+		console.error(chalk.red('Addon is not (properly) installed, install instead'))
 		process.exit(1)
 	}
 
