@@ -249,12 +249,14 @@ export default async function install(args: Args, skipRoutes: boolean = false) {
 			}
 		}
 
-		if (conf.database?.migrations) await system.execute(`php artisan migrate --force --path=database/migrations-${data.data.id}`, { async: true })
+		if (conf.database?.migrations) system.execute(`php artisan migrate --force --path=database/migrations-${data.data.id}`)
 
 		await rebuild({})
 
 		await fs.promises.rm('/tmp/ainx/addon', { recursive: true })
-		await system.execute('php artisan optimize', { async: true }).catch(() => { })
+		try {
+			system.execute('php artisan optimize')
+		}	catch { }
 
 		if (!fs.existsSync(`.blueprint/extensions/${data.data.id}`)) await fs.promises.mkdir(`.blueprint/extensions/${data.data.id}`, { recursive: true })
 		await fs.promises.cp(args.file, `.blueprint/extensions/${data.data.id}/${data.data.id}.ainx`)
