@@ -46,7 +46,7 @@ export default async function install(args: Args, skipRoutes: boolean = false) {
 			console.error(chalk.cyan(`bash ${data.data.hasRemove}`))
 		}
 
-		if (fs.existsSync(`.blueprint/extensions/${data.data.id}`) && !args.force) {
+		if (fs.existsSync(`.blueprint/extensions/${data.data.id}/${data.data.id}.ainx`) && !args.force) {
 			console.error(chalk.red(`Addon already installed, update instead ${data.data.hasRemove ? 'and make sure you ran the remove script' : ''}`.trim()))
 			process.exit(1)
 		}
