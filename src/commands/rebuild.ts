@@ -28,8 +28,12 @@ export default async function rebuild(args: Args) {
 			cwd: process.cwd()
 		})
 
-		await new Promise((resolve, reject) => {
-			cmd.on('close', resolve)
+		await new Promise<void>((resolve, reject) => {
+			cmd.on('exit', (code) => {
+				if (code === 0) resolve()
+				else reject()
+			})
+
 			cmd.on('error', reject)
 		})
 	} catch {
@@ -38,8 +42,12 @@ export default async function rebuild(args: Args) {
 			cwd: process.cwd()
 		})
 
-		await new Promise((resolve, reject) => {
-			cmd.on('close', resolve)
+		await new Promise<void>((resolve, reject) => {
+			cmd.on('exit', (code) => {
+				if (code === 0) resolve()
+				else reject()
+			})
+
 			cmd.on('error', reject)
 		})
 	}
