@@ -38,6 +38,7 @@ export default async function bundle(args: Args) {
 		info: {
 			name: string
 			version: string
+			author?: string
 		}
 
 		database?: {
@@ -109,7 +110,6 @@ export default async function bundle(args: Args) {
 		'',
 		'echo "Installing Yarn packages..."',
 		'if [ -f "yarn.lock" ]; then',
-		'  export NODE_OPTIONS=--openssl-legacy-provider',
 		'  yarn install',
 		'else',
 		'  echo "yarn.lock file not found. Exiting..."',
@@ -123,45 +123,96 @@ export default async function bundle(args: Args) {
 		'echo "ainx has been successfully installed."'
 	].join('\n')), '', 0o755)
 
-	zip.addFile('README.txt', Buffer.from([
-		'This is an ainx bundled blueprint addon, this means you can either',
-		'use blueprint to install it or use the ainx installer to install it.',
-		`downloaded addon: ${conf.info.name} ${conf.info.version}`,
+	zip.addFile('README.blueprint.txt', Buffer.from([
+		'BLUEPRINT INSTALLATION',
 		'',
-		'If you are using blueprint: (https://blueprint.zip/)',
-		' Installing:',
-		`  1. Extract ${data.data.id}.blueprint to your pterodactyl folder`,
-		`  2. Run blueprint -install ${data.data.id}`,
-		' Updating:',
-		`  1. Extract the new ${data.data.id}.blueprint to your pterodactyl folder`,
-		`  2. Run blueprint -install ${data.data.id}`,
-		' Removing:',
-		`  1. Run blueprint -remove ${data.data.id}`,
+		`Downloaded addon: ${conf.info.name} ${conf.info.version}`,
+		conf.info.author ? `Author: ${conf.info.author}` : null,
 		'',
-		'If you are using ainx (standalone):',
-		' Install / Update ainx:',
-		'  bash ./install-ainx.sh',
+		'(!) BLUEPRINT:',
+		'Make sure blueprint is installed fully using the steps from',
+		'  https://blueprint.zip/docs/?page=getting-started/Installation',
 		'',
-		' Installing:',
-		`  1. Run ainx install ${data.data.id}.ainx`,
-		' Updating:',
-		`  1. Run ainx upgrade ${data.data.id}.ainx`,
-		' Removing:',
-		`  1. Run ainx remove ${data.data.id}`,
+		' - Installation of the addon:',
+		`  1. Copy ${data.data.id}.blueprint to your pterodactyl folder (usually /var/www/pterodactyl)`,
+		'  2. Run',
+		`    blueprint -install ${data.data.id}`,
+		'  3. Done!',
+		'',
+		' - Updating the addon:',
+		`  1. Copy the new ${data.data.id}.blueprint to your pterodactyl folder`,
+		'  2. Run',
+		`    blueprint -install ${data.data.id}`,
+		'  3. Done!',
+		'',
+		' - Removing the addon: (only if you want to remove the addon, not update)',
+		'  1. Run',
+		`    blueprint -remove ${data.data.id}`,
+		'  2. Done!',
 		'',
 		...conf.database?.migrations ? [
 			'(!) Manually migrate the database:',
-			' If you use a test panel before production you may need to migrate the database',
-			' manually depending on how you test, you can use this command:',
-			`  php artisan migrate --path=database/migrations-${data.data.id} --force`,
+			'If you use a test panel before production you may need to migrate the database',
+			'manually depending on how you test, you can use this command for blueprint:',
+			'  php artisan migrate --force',
 			'',
-		] : [],
+		] : []
+	].filter((v) => v !== null).join('\n').trim()))
+
+	zip.addFile('README.standalone.txt', Buffer.from([
+		'STANDALONE INSTALLATION',
+		'',
+		`Downloaded addon: ${conf.info.name} ${conf.info.version}`,
+		conf.info.author ? `Author: ${conf.info.author}` : null,
+		'',
 		...data.data.hasRemove ? [
 			'(!) Custom remove script:',
 			' This addon has a custom remove script you may need to run before installing/updating it with ainx, you can run it using',
 			`  bash ${data.data.hasRemove}`,
 			'',
 		] : [],
+		'(!) STANDALONE:',
+		'Make sure NodeJS 16+ and Yarn are installed on your system, you can use the install-ainx.sh script to install them.',
+		'To install ainx either run the script or run',
+		'  npm install -g ainx',
+		'',
+		' - Installation of the addon:',
+		'  1. Run',
+		`    ainx install ${data.data.id}.ainx`,
+		'  2. Follow any on-screen instructions if present, you can always exit while installing and run the command again',
+		'  3. Done!',
+		'',
+		' - Updating the addon:',
+		'  1. Run',
+		`    ainx upgrade ${data.data.id}.ainx`,
+		'  2. Done!',
+		'',
+		' - Removing the addon:',
+		'  1. Run',
+		`    ainx remove ${data.data.id}`,
+		'  2. Follow any on-screen instructions if present, you can always exit while removing and run the command again',
+		'  3. Done!',
+		'',
+		...conf.database?.migrations ? [
+			'(!) Manually migrate the database:',
+			'If you use a test panel before production you may need to migrate the database',
+			'manually depending on how you test, you can use this command for ainx:',
+			`  php artisan migrate --path=database/migrations-${data.data.id} --force`,
+			'',
+		] : []
+	].filter((v) => v !== null).join('\n').trim()))
+
+	zip.addFile('README.txt', Buffer.from([
+		'Thank you for your purchase!',
+		`Downloaded addon: ${conf.info.name} ${conf.info.version}`,
+		conf.info.author ? `Author: ${conf.info.author}` : null,
+		'',
+		'(i) BLUEPRINT: (https://blueprint.zip/)',
+		'View the README.blueprint.txt file for instructions on how to install the addon using blueprint',
+		'',
+		'(i) STANDALONE: (ainx)',
+		'View the README.standalone.txt file for instructions on how to install the addon using ainx (for standalone installations)',
+		'',
 		...files.includes('README.txt') ? [
 			await fs.promises.readFile('README.txt', 'utf-8')
 		] : []

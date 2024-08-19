@@ -1,12 +1,11 @@
 {
-  "version": "1.2.4",
+  "version": "1.2.5",
   "name": "ainx",
   "license": "MIT",
   "type": "module",
   "homepage": "https://github.com/0x7d8/ainx",
   "scripts": {
-    "dev": "bun ../src/index.ts",
-    "bundle": "rm -rf lib/* && bun build src/index.ts --target node --bundle --minify --outfile lib/ainx.js",
+    "bundle": "rm -rf lib/* && bun build src/index.ts --target node --bundle --minify --outfile lib/ainx_.js && echo '#!/usr/bin/env node' > lib/ainx.js && echo \"if (parseInt(process.versions.node.split('.')[0]) < 16) {console.error('Node version '+process.versions.node+' is not supported, please use Node.js 16 or higher.');process.exit(1);};\" >> lib/ainx.js && cat lib/ainx_.js >> lib/ainx.js && rm lib/ainx_.js",
     "install:dev": "bun run bundle && npm i -g . --install-links"
   },
   "bin": {
@@ -20,14 +19,14 @@
     "@rjweb/utils": "^1.12.21",
     "@types/adm-zip": "^0.5.5",
     "@types/js-yaml": "^4.0.9",
-    "@types/node": "^18.0.0",
-    "@types/yargs": "^17.0.32",
-    "adm-zip": "^0.5.14",
-    "bun": "^1.1.13",
+    "@types/node": "^18.19.45",
+    "@types/yargs": "^17.0.33",
+    "adm-zip": "^0.5.15",
+    "bun": "^1.1.24",
     "chalk": "^5.3.0",
     "enquirer": "^2.4.1",
     "js-yaml": "^4.1.0",
-    "typescript": "^5.4.5",
+    "typescript": "^5.5.4",
     "yargs": "^17.7.2",
     "zod": "^3.23.8"
   }

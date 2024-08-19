@@ -1,5 +1,3 @@
-#!/usr/bin/env node
-
 import yargs from "yargs/yargs"
 import { hideBin } from "yargs/helpers"
 import { version as pckgVersion } from "../package.json"
