@@ -2,12 +2,13 @@ import chalk from "chalk"
 import fs from "fs"
 import AdmZip from "adm-zip"
 import { manifest } from "src/types/manifest"
-import yaml from "js-yaml"
-import path from "path"
+import * as blueprint from "src/globals/blueprint"
 
 export type Args = {}
 
 export default async function bundle(args: Args) {
+	console.log(chalk.gray('Bundling Addon ...'))
+
 	const include: string[] = [],
 		files = await fs.promises.readdir('.')
 
@@ -33,18 +34,8 @@ export default async function bundle(args: Args) {
 		process.exit(1)
 	}
 
-	const bpZip = new AdmZip(blueprintZip)
-	const conf = yaml.load(bpZip.readAsText('conf.yml')) as {
-		info: {
-			name: string
-			version: string
-			author?: string
-		}
-
-		database?: {
-			migrations?: string
-		}
-	}
+	const bpZip = new AdmZip(blueprintZip),
+		conf = blueprint.config(bpZip.readAsText('conf.yml'))
 
 	const zip = new AdmZip(),
 		ainx = new AdmZip()
@@ -220,5 +211,14 @@ export default async function bundle(args: Args) {
 
 	await zip.writeZipPromise(`${data.data.id}.zip`)
 
-	console.log(chalk.green('Addon Bundled'))
+	console.log(chalk.gray('Bundling Addon ...'), chalk.bold.green('Done'))
+	console.log()
+
+	console.log(chalk.gray('Blueprint File:'), chalk.cyan(blueprintZip))
+	console.log(chalk.gray('Manifest File:'), chalk.cyan('manifest.json'))
+	console.log(chalk.gray('Included Files:'), chalk.cyan(include.join(', ')))
+	console.log(chalk.gray('Output File:'), chalk.cyan(`${data.data.id}.zip`))
+	console.log()
+	console.log(chalk.gray('Addon:'), chalk.cyan(conf.info.name))
+	console.log(chalk.gray('Version:'), chalk.cyan(conf.info.version))
 }

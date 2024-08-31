@@ -18,7 +18,13 @@ export default async function rebuild(args: Args) {
 
 	await new Promise((resolve) => installCmd.on('close', resolve))
 
-	console.log(chalk.gray('Rebuilding assets... (this may take a while)'))
+	console.log(chalk.gray('Rebuilding assets ...'))
+	console.log()
+	console.log(chalk.bold.red('@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@'))
+	console.log(chalk.bold.red('@  THIS MAY TAKE A WHILE, PLEASE WAIT  @'))
+	console.log(chalk.bold.red('@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@'))
+	console.log()
+
 	try {
 		const cmd = cp.spawn('yarn', ['build:production'], {
 			env: {
@@ -52,5 +58,6 @@ export default async function rebuild(args: Args) {
 		})
 	}
 
-	console.log(chalk.green('Rebuild complete'))
+	console.log()
+	console.log(chalk.gray('Rebuilding assets ...'), chalk.bold.green('Done'))
 }

@@ -46,6 +46,7 @@ export const step = z.union([
 
 export const manifest = z.object({
 	id: z.string(),
+	ainxRequirement: z.string().optional().default('1.3.0'),
 	hasRemove: z.string().optional(),
 	installation: step.array(),
 	removal: step.array().optional()

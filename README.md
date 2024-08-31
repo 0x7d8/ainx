@@ -20,3 +20,29 @@ pnpm install:dev
 # ainx is now globally available
 ainx
 ```
+
+## Blueprint Compatibility
+
+```yaml
+[x] PHP Routes
+  [x] Client
+  [x] Application
+  [x] Web
+[x] Database Migrations
+[x] Upgrades
+[x] Scripts
+  [x] Install
+  [x] Remove
+  [ ] Export
+[ ] Wrappers
+[x] Placeholders v2
+[ ] Flags
+  [x] ignorePlaceholders
+  [ ] forceLegacyPlaceholders
+  [x] hasInstallScript
+  [x] hasRemoveScript
+  [ ] hasExportScript
+[ ] $blueprint
+[ ] Artisan Console
+[ ] Admin views
+```

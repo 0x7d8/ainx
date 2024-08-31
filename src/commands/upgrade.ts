@@ -3,6 +3,7 @@ import fs from "fs"
 import remove from "src/commands/remove"
 import install from "src/commands/install"
 import enquirer from "enquirer"
+import { intercept } from "src/globals/log"
 
 export type Args = {
 	file: string
@@ -25,6 +26,13 @@ export default async function upgrade(args: Args) {
 		message: `Upgrade ${args.file.replace('.ainx', '')}?`
 	})
 
+	const start = Date.now(),
+		log = intercept()
+
+	console.log()
+	console.log(chalk.gray('Upgrading ...'))
+	console.log()
+
 	if (!confirm) {
 		console.log(chalk.yellow('Cancelled'))
 		process.exit(0)
@@ -42,5 +50,8 @@ export default async function upgrade(args: Args) {
 		force: true
 	}, true)
 
-	console.log(chalk.green('Upgrade complete'))
+	console.log(chalk.gray('Upgrading ...'), chalk.bold.green('Done'))
+	console.log(chalk.italic.gray(`Took ${Date.now() - start}ms`))
+
+	await log.ask()
 }

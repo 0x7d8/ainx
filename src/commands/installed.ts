@@ -1,13 +1,9 @@
 import chalk from "chalk"
 import fs from "fs"
-import enquirer from "enquirer"
 import AdmZip from "adm-zip"
 import { manifest } from "src/types/manifest"
-import yaml from "js-yaml"
 import path from "path"
-import { system } from "@rjweb/utils"
-import cp from "child_process"
-import rebuild from "src/commands/rebuild"
+import * as blueprint from "src/globals/blueprint"
 
 export type Args = {}
 
@@ -38,15 +34,7 @@ export default async function installed(args: Args) {
 		if (!data.success) continue
 
 		const bpZip = new AdmZip(zip.readFile('addon.blueprint') ?? undefined),
-			conf = yaml.load(bpZip.readAsText('conf.yml')) as {
-				info: {
-					name: string
-					author: string
-					version: string
-					identifier: string
-					website?: string
-				}
-			}
+			conf = blueprint.config(bpZip.readAsText('conf.yml'))
 
 		console.log(' ', chalk.bold(conf.info.name))
 		console.log('  ', chalk.gray('Author:'), chalk.cyan(conf.info.author))

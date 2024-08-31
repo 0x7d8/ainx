@@ -2,12 +2,15 @@ import chalk from "chalk"
 import fs from "fs"
 import enquirer from "enquirer"
 import AdmZip from "adm-zip"
+import { version as pckgVersion } from "../../package.json"
 import { manifest } from "src/types/manifest"
-import yaml from "js-yaml"
 import path from "path"
 import { system } from "@rjweb/utils"
 import cp from "child_process"
 import rebuild from "src/commands/rebuild"
+import semver from "semver"
+import * as blueprint from "src/globals/blueprint"
+import { intercept } from "src/globals/log"
 
 export type Args = {
 	file: string
@@ -15,9 +18,6 @@ export type Args = {
 }
 
 export default async function install(args: Args, skipRoutes: boolean = false) {
-	console.log(chalk.bold.red('IF THERE ARE ANY ISSUES WITH THIS CLI, PLEASE REPORT THEM IN A'))
-	console.log(chalk.bold.red('TICKET ON https://rjansen.dev/discord OR ON GITHUB'))
-
 	if (!args.file.endsWith('.ainx')) {
 		console.error(chalk.red('Invalid file type, file must end in'), chalk.green('.ainx'))
 		process.exit(1)
@@ -27,6 +27,8 @@ export default async function install(args: Args, skipRoutes: boolean = false) {
 		console.error(chalk.red('File does not exist'))
 		process.exit(1)
 	}
+
+	const log = intercept()
 
 	try {
 		const zip = new AdmZip(args.file)
@@ -41,13 +43,21 @@ export default async function install(args: Args, skipRoutes: boolean = false) {
 			process.exit(1)
 		}
 
+		if (semver.gt(data.data.ainxRequirement, pckgVersion)) {
+			console.error(chalk.red('Ainx version requirement not met'))
+			console.log(chalk.gray('Update using:'), chalk.cyan('npm i -g ainx'))
+			console.log(chalk.gray('Required:'), chalk.cyan(data.data.ainxRequirement))
+			console.log(chalk.gray('Current:'), chalk.cyan(pckgVersion))
+			process.exit(1)
+		}
+
 		if (data.data.hasRemove && fs.existsSync(data.data.hasRemove)) {
 			console.error(chalk.red('Addon has a remove script, you may need to remove the addon first before installing with ainx'))
 			console.error(chalk.cyan(`bash ${data.data.hasRemove}`))
 		}
 
 		if (fs.existsSync(`.blueprint/extensions/${data.data.id}/${data.data.id}.ainx`) && !args.force) {
-			console.error(chalk.red(`Addon already installed, update instead ${data.data.hasRemove ? 'and make sure you ran the remove script' : ''}`.trim()))
+			console.error(chalk.red('Addon already installed, update instead'))
 			process.exit(1)
 		}
 
@@ -64,77 +74,111 @@ export default async function install(args: Args, skipRoutes: boolean = false) {
 			}
 		}
 
-		console.log(chalk.green('Installing'), data.data.id, chalk.yellow('...'))
+		const start = Date.now()
+
+		console.log(chalk.gray('Installing'), chalk.cyan(data.data.id), chalk.gray('...'))
+		console.log()
+
 		const bpZip = new AdmZip(zip.readFile('addon.blueprint') ?? undefined)
 
 		bpZip.extractAllTo('/tmp/ainx/addon', true)
-		const conf = yaml.load(bpZip.readAsText('conf.yml')) as {
-			info: {
-				name: string
-				version: string
-			}
+		const conf = blueprint.config(bpZip.readAsText('conf.yml'))
 
-			requests?: {
-				controllers?: string
-				routers?: {
-					client?: string
-				}
-			}
-
-			data?: {
-				public?: string
-				directory?: string
-			}
-
-			database?: {
-				migrations?: string
-			}
-		}
-
-		console.log(chalk.gray('Addon Name:'), chalk.green(conf.info.name))
-		console.log(chalk.gray('Addon Version:'), chalk.green(conf.info.version))
+		console.log(chalk.gray('Addon Name:'), chalk.cyan(conf.info.name))
+		console.log(chalk.gray('Addon Version:'), chalk.cyan(conf.info.version))
+		if (conf.info.author) console.log(chalk.gray('Addon Author:'), chalk.cyan(conf.info.author))
+		console.log()
 
 		if (conf.data?.public && !fs.existsSync(`public/extensions/${data.data.id}`)) {
+			console.log(chalk.gray('Copying public files'), chalk.cyan(conf.data.public), chalk.gray('...'))
+
 			await fs.promises.mkdir(`public/extensions/${data.data.id}`, { recursive: true })
 			await fs.promises.cp(path.join('/tmp/ainx/addon', conf.data.public), `public/extensions/${data.data.id}`, { recursive: true })
+
+			await blueprint.recursivePlaceholders(conf, `public/extensions/${data.data.id}`)
+
+			console.log(chalk.gray('Copying public files'), chalk.cyan(conf.data.public), chalk.gray('...'), chalk.bold.green('Done'))
 		}
 
 		if (conf.data?.directory && !fs.existsSync(`.blueprint/extensions/${data.data.id}`)) {
+			console.log(chalk.gray('Copying private files'), chalk.cyan(conf.data.directory), chalk.gray('...'))
+
 			await fs.promises.mkdir(`.blueprint/extensions/${data.data.id}`, { recursive: true })
 			await fs.promises.cp(path.join('/tmp/ainx/addon', conf.data.directory), `.blueprint/extensions/${data.data.id}/private`, { recursive: true })
 
-			if (fs.existsSync(`.blueprint/extensions/${data.data.id}/private/install.sh`)) {
+			await blueprint.recursivePlaceholders(conf, `.blueprint/extensions/${data.data.id}/private`)
+
+			if (conf.info.flags.includes('hasInstallScript') && fs.existsSync(`.blueprint/extensions/${data.data.id}/private/install.sh`)) {
 				const cmd = cp.spawn('bash', [`.blueprint/extensions/${data.data.id}/private/install.sh`], {
 					stdio: 'inherit',
 					cwd: process.cwd(),
 					env: {
 						...process.env,
-						EXTENSION_IDENTIFIER: data.data.id,
-						PTERODACTYL_DIRECTORY: process.cwd()
+						...blueprint.environment(conf)
 					}
 				})
 
 				await new Promise((resolve) => cmd.on('close', resolve))
 			}
+
+			console.log(chalk.gray('Copying private files'), chalk.cyan(conf.data.directory), chalk.gray('...'), chalk.bold.green('Done'))
 		}
 
 		if (conf.requests?.routers?.client && !fs.existsSync(`routes/client-${data.data.id}.php`)) {
+			console.log(chalk.gray('Adding client router'), chalk.cyan(`routes/client-${data.data.id}.php`), chalk.gray('...'))
+
 			await fs.promises.appendFile('routes/api-client.php', `\ninclude 'client-${data.data.id}.php';`)
 
 			const client = bpZip.readAsText(conf.requests.routers.client)
 				.replace('\'prefix\' => \'', `'prefix' => '/extensions/${data.data.id}`)
 
-			await fs.promises.writeFile(`routes/client-${data.data.id}.php`, client)
+			await fs.promises.writeFile(`routes/client-${data.data.id}.php`, blueprint.placeholders(conf, client))
+
+			console.log(chalk.gray('Adding client router'), chalk.cyan(`routes/client-${data.data.id}.php`), chalk.gray('...'), chalk.bold.green('Done'))
+		}
+
+		if (conf.requests?.routers?.application && !fs.existsSync(`routes/application-${data.data.id}.php`)) {
+			console.log(chalk.gray('Adding application router'), chalk.cyan(`routes/application-${data.data.id}.php`), chalk.gray('...'))
+
+			await fs.promises.appendFile('routes/api-application.php', `\ninclude 'application-${data.data.id}.php';`)
+
+			const application = bpZip.readAsText(conf.requests.routers.application)
+				.replace('\'prefix\' => \'', `'prefix' => '/extensions/${data.data.id}`)
+
+			await fs.promises.writeFile(`routes/application-${data.data.id}.php`, blueprint.placeholders(conf, application))
+
+			console.log(chalk.gray('Adding application router'), chalk.cyan(`routes/application-${data.data.id}.php`), chalk.gray('...'), chalk.bold.green('Done'))
+		}
+
+		if (conf.requests?.routers?.web && !fs.existsSync(`routes/base-${data.data.id}.php`)) {
+			console.log(chalk.gray('Adding base router'), chalk.gray(`routes/base-${data.data.id}.php`), chalk.gray('...'))
+
+			await fs.promises.appendFile('routes/base.php', `\ninclude 'base-${data.data.id}.php';`)
+
+			const web = bpZip.readAsText(conf.requests.routers.web)
+				.replace('\'prefix\' => \'', `'prefix' => '/extensions/${data.data.id}`)
+
+			await fs.promises.writeFile(`routes/base-${data.data.id}.php`, blueprint.placeholders(conf, web))
+
+			console.log(chalk.gray('Adding base router'), chalk.gray(`routes/base-${data.data.id}.php`), chalk.gray('...'), chalk.bold.green('Done'))
 		}
 
 		if (conf.requests?.controllers && !fs.existsSync(`app/BlueprintFramework/Extensions/${data.data.id}`)) {
+			console.log(chalk.gray('Copying controllers'), chalk.cyan(conf.requests.controllers), chalk.gray('...'))
+
 			if (fs.existsSync(`app/BlueprintFramework/Extensions/${data.data.id}`)) await fs.promises.rm(`app/BlueprintFramework/Extensions/${data.data.id}`, { recursive: true })
 
 			await fs.promises.mkdir(`app/BlueprintFramework/Extensions/${data.data.id}`, { recursive: true })
 			await fs.promises.cp(path.join('/tmp/ainx/addon', conf.requests.controllers), `app/BlueprintFramework/Extensions/${data.data.id}`, { recursive: true })
+
+			await blueprint.recursivePlaceholders(conf, `app/BlueprintFramework/Extensions/${data.data.id}`)
+
+			console.log(chalk.gray('Copying controllers'), chalk.cyan(conf.requests.controllers), chalk.gray('...'), chalk.bold.green('Done'))
 		}
 
 		if (conf.database?.migrations && !fs.existsSync(`database/migrations-${data.data.id}`)) {
+			console.log(chalk.gray('Copying migrations'), chalk.cyan(conf.database.migrations), chalk.gray('...'))
+
 			await fs.promises.mkdir(`database/migrations-${data.data.id}`, { recursive: true })
 
 			const migrations = await fs.promises.readdir(path.join('/tmp/ainx/addon', conf.database.migrations))
@@ -143,11 +187,15 @@ export default async function install(args: Args, skipRoutes: boolean = false) {
 
 				await fs.promises.writeFile(`database/migrations-${data.data.id}/${migration}`, content)
 			}
+
+			console.log(chalk.gray('Copying migrations'), chalk.cyan(conf.database.migrations), chalk.gray('...'), chalk.bold.green('Done'))
 		}
 
 		for (const step of data.data.installation) {
 			switch (step.type) {
 				case "copy": {
+					console.log(chalk.gray('Copying'), chalk.cyan(step.source), chalk.gray('to'), chalk.cyan(step.destination), chalk.gray('...'))
+
 					if (fs.statSync(step.source).isDirectory()) {
 						if (!fs.existsSync(step.destination)) await fs.promises.mkdir(step.destination, { recursive: true })
 
@@ -158,18 +206,27 @@ export default async function install(args: Args, skipRoutes: boolean = false) {
 						await fs.promises.cp(step.source, step.destination)
 					}
 
+					await blueprint.recursivePlaceholders(conf, step.destination)
+					console.log(chalk.gray('Copying'), chalk.cyan(step.source), chalk.gray('to'), chalk.cyan(step.destination), chalk.gray('...'), chalk.bold.green('Done'))
+
 					break
 				}
 
 				case "remove": {
+					console.log(chalk.gray('Removing'), chalk.cyan(step.path), chalk.gray('...'))
+
 					try {
 						await fs.promises.rm(step.path, { recursive: true })
 					} catch { }
+
+					console.log(chalk.gray('Removing'), chalk.cyan(step.path), chalk.gray('...'), chalk.bold.green('Done'))
 
 					break
 				}
 
 				case "replace": {
+					console.log(chalk.gray('Replacing in'), chalk.cyan(step.file), chalk.gray('...'))
+
 					const content = await fs.promises.readFile(step.file, 'utf-8'),
 						replaceContent = step.newline ? `${step.replace}\n` : step.replace
 
@@ -181,6 +238,9 @@ export default async function install(args: Args, skipRoutes: boolean = false) {
 						: content.replace(step.search, replaceContent)
 
 					await fs.promises.writeFile(step.file, replaced)
+
+					console.log(chalk.gray('Replacing in'), chalk.cyan(step.file), chalk.gray('...'), chalk.bold.green('Done'))
+
 					break
 				}
 
@@ -223,15 +283,17 @@ export default async function install(args: Args, skipRoutes: boolean = false) {
 					if (fs.existsSync('resources/scripts/routers/routes.ts')) await fs.promises.writeFile('resources/scripts/routers/routes.ts', router)
 					else await fs.promises.writeFile('resources/scripts/routers/routes.tsx', router)
 
-					console.log(chalk.yellow('Add the following route manually in a seperate terminal:'))
+					console.log(chalk.red.bold('Add the following route manually in a seperate terminal:'))
 					console.log(chalk.cyan(`${process.cwd()}/resources/scripts/routers/routes.ts`))
 					console.log(chalk.gray('or'), chalk.cyan(`${process.cwd()}/resources/scripts/routers/routes.tsx`))
-					console.log('')
+					console.log()
 					console.log(chalk.gray(newRoute))
-					console.log('')
-					console.log(chalk.yellow('After:'))
-					console.log('')
+					console.log()
+					console.log(chalk.yellow('Example:'))
+					console.log()
 					console.log(chalk.gray(afterRoute))
+					console.log(chalk.gray(newRoute))
+					console.log()
 
 					const { done } = await enquirer.prompt<{ done: boolean }>({
 						type: 'confirm',
@@ -249,7 +311,15 @@ export default async function install(args: Args, skipRoutes: boolean = false) {
 			}
 		}
 
-		if (conf.database?.migrations) system.execute(`php artisan migrate --force --path=database/migrations-${data.data.id}`)
+		if (conf.database?.migrations) {
+			const files = await fs.promises.readdir(`database/migrations-${data.data.id}`).then((files) => files.length)
+
+			console.log(chalk.gray('Running'), chalk.cyan(files), chalk.gray('migration(s) ...'))
+
+			system.execute(`php artisan migrate --force --path=database/migrations-${data.data.id}`)
+
+			console.log(chalk.gray('Running'), chalk.cyan(files), chalk.gray('migration(s) ...'), chalk.bold.green('Done'))
+		}
 
 		await rebuild({})
 
@@ -261,10 +331,16 @@ export default async function install(args: Args, skipRoutes: boolean = false) {
 		if (!fs.existsSync(`.blueprint/extensions/${data.data.id}`)) await fs.promises.mkdir(`.blueprint/extensions/${data.data.id}`, { recursive: true })
 		await fs.promises.cp(args.file, `.blueprint/extensions/${data.data.id}/${data.data.id}.ainx`)
 
-		console.log(chalk.green('Addon Installed'))
+		console.log(chalk.gray('Installing'), chalk.cyan(data.data.id), chalk.gray('...'), chalk.bold.green('Done'))
+		console.log(chalk.italic.gray(`Took ${Date.now() - start}ms`))
+
+		if (!args.force) await log.ask()
 	} catch (err: any) {
 		console.error(chalk.red(String(err?.stack ?? err)))
 		console.error(chalk.red('Invalid ainx file'))
+
+		if (!args.force) await log.ask()
+
 		process.exit(1)
 	}
 }
