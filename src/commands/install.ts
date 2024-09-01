@@ -101,7 +101,7 @@ export default async function install(args: Args, skipRoutes: boolean = false) {
 			console.log(chalk.gray('Linking public files'), chalk.cyan(conf.data.public), chalk.gray('...'), chalk.bold.green('Done'))
 		}
 
-		if (conf.data?.directory && !fs.existsSync(`.blueprint/extensions/${data.data.id}`)) {
+		if (conf.data?.directory) {
 			console.log(chalk.gray('Copying private files'), chalk.cyan(conf.data.directory), chalk.gray('...'))
 
 			await fs.promises.mkdir(`.blueprint/extensions/${data.data.id}`, { recursive: true })
