@@ -8,7 +8,7 @@ import * as blueprint from "src/globals/blueprint"
 export type Args = {}
 
 export default async function installed(args: Args) {
-	if (!fs.existsSync('.blueprint')) {
+	if (!fs.existsSync('.blueprint/extensions')) {
 		console.error(chalk.red('No addons installed'))
 		process.exit(1)
 	}

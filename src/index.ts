@@ -9,6 +9,7 @@ import upgrade from "src/commands/upgrade"
 import bundle from "src/commands/bundle"
 import rebuild from "src/commands/rebuild"
 import installed from "src/commands/installed"
+import info from "src/commands/info"
 
 console.log(chalk.bold.red('IF THERE ARE ANY ISSUES WITH THIS CLI, PLEASE REPORT THEM WITH'))
 console.log(chalk.bold.red('YOUR ADDON AUTHOR OR ON GITHUB (https://github.com/0x7d8/ainx)'))
@@ -72,6 +73,8 @@ yargs(hideBin(process.argv))
   (rg) => rebuild(rg))
   .command('installed', 'list installed addons', (yargs) => yargs,
   (rg) => installed(rg))
+  .command('info', 'show panel information', (yargs) => yargs,
+  (rg) => info(rg))
   .strictCommands()
   .demandCommand(1)
   .parse()

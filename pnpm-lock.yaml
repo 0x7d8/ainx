@@ -7,13 +7,6 @@ settings:
 importers:
 
   .:
-    dependencies:
-      axios:
-        specifier: ^1.7.7
-        version: 1.7.7
-      semver:
-        specifier: ^7.6.3
-        version: 7.6.3
     devDependencies:
       '@rjweb/utils':
         specifier: ^1.12.21
@@ -36,6 +29,9 @@ importers:
       adm-zip:
         specifier: 0.5.15
         version: 0.5.15
+      axios:
+        specifier: ^1.7.7
+        version: 1.7.7
       bun:
         specifier: ^1.1.26
         version: 1.1.26
@@ -48,6 +44,9 @@ importers:
       js-yaml:
         specifier: ^4.1.0
         version: 4.1.0
+      semver:
+        specifier: ^7.6.3
+        version: 7.6.3
       typescript:
         specifier: ^5.5.4
         version: 5.5.4
@@ -149,7 +148,6 @@ packages:
 
   bun@1.1.26:
     resolution: {integrity: sha512-dWSewAqE7sVbYmflJxgG47dW4vmsbar7VAnQ4ao45y3ulr3n7CwdsMLFnzd28jhPRtF+rsaVK2y4OLIkP3OD4A==}
-    cpu: [arm64, x64]
     os: [darwin, linux, win32]
     hasBin: true
 
