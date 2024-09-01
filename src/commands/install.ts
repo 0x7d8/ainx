@@ -89,7 +89,8 @@ export default async function install(args: Args, skipRoutes: boolean = false) {
 		if (conf.info.author) console.log(chalk.gray('Addon Author:'), chalk.cyan(conf.info.author))
 		console.log()
 
-		if (conf.data?.public && !fs.existsSync(`public/extensions/${data.data.id}`)) {
+		const publicStat = await fs.promises.stat(path.join(process.cwd(), 'public/extensions', data.data.id)).catch(() => null)
+		if (conf.data?.public && !publicStat?.isSymbolicLink() && !publicStat?.isDirectory()) {
 			console.log(chalk.gray('Linking public files'), chalk.cyan(conf.data.public), chalk.gray('...'))
 
 			await fs.promises.cp(path.join('/tmp/ainx/addon', conf.data.public), path.join('.blueprint/extensions', data.data.id, conf.data.public), { recursive: true })
