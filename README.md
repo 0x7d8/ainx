@@ -33,7 +33,6 @@ ainx
 [x] Scripts
   [x] Install
   [x] Remove
-  [ ] Export
 [ ] Wrappers
   [ ] Admin
   [ ] Dashboard
