@@ -35,13 +35,16 @@ ainx
   [x] Remove
   [ ] Export
 [ ] Wrappers
-[x] Placeholders v2
-[ ] Flags
+  [ ] Admin
+  [ ] Dashboard
+[x] Placeholders
+  [x] v2
+  [x] v1
+[x] Flags
   [x] ignorePlaceholders
-  [ ] forceLegacyPlaceholders
+  [x] forceLegacyPlaceholders
   [x] hasInstallScript
   [x] hasRemoveScript
-  [ ] hasExportScript
 [ ] $blueprint
 [ ] Artisan Console
 [ ] Admin views

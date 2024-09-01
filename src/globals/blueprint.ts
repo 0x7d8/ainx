@@ -54,31 +54,49 @@ export function environment(conf: BlueprintConfig) {
 export function placeholders(conf: BlueprintConfig, input: string): string {
 	if (conf.info.flags?.includes('ignorePlaceholders')) return input
 
-	const placeholders: Record<string, string> = {
-		'{identifier}': conf.info.identifier,
-		'{identifier^}': conf.info.identifier.slice(0, 1).toUpperCase().concat(conf.info.identifier.slice(1)),
-		'{identifier!}': conf.info.identifier.toUpperCase(),
-		'{name}': conf.info.name,
-		'{name!}': conf.info.name.toUpperCase(),
-		'{author}': conf.info.author ?? 'null',
-		'{version}': conf.info.version,
+	if (conf.info.flags?.includes('forceLegacyPlaceholders') || conf.info.target.includes('indev') || conf.info.target.includes('alpha')) {
+		const placeholders: Record<string, string> = {
+			'^#version#^': conf.info.version,
+			'^#author#^': conf.info.author ?? 'null',
+			'^#name#^': conf.info.name,
+			'^#identifier#^': conf.info.identifier,
 
-		'{random}': number.generate(0, 99999).toString(),
-		'{timestamp}': Math.floor(Date.now() / 1000).toString(),
-		'{mode}': 'local',
-		'{target}': `ainx@${pckgVersion}`,
-		'{is_target}': 'false',
+			'^#path#^': process.cwd(),
+			'^#datapath#^': `${process.cwd()}/.blueprint/extensions/${conf.info.identifier}/${conf.data?.directory ?? 'data'}`,
+			'^#publicpath#^': `${process.cwd()}/.blueprint/extensions/${conf.info.identifier}/${conf.data?.public ?? 'public'}`,
+			'^#installmode#^': 'normal',
+			'^#blueprintversion#^': `ainx@${pckgVersion}`,
+			'^#timestamp#^': Math.floor(Date.now() / 1000).toString()
+		}
 
-		'{root}': process.cwd(),
-		'{root/public}': `${process.cwd()}/.blueprint/extensions/${conf.info.identifier}/public`,
-		'{root/data}': `${process.cwd()}/.blueprint/extensions/${conf.info.identifier}/data`,
+		return input.replace(/(\^#[^#]+#\^)/g, (match) => placeholders[match] ?? match)
+	} else {
+		const placeholders: Record<string, string> = {
+			'{identifier}': conf.info.identifier,
+			'{identifier^}': conf.info.identifier.slice(0, 1).toUpperCase().concat(conf.info.identifier.slice(1)),
+			'{identifier!}': conf.info.identifier.toUpperCase(),
+			'{name}': conf.info.name,
+			'{name!}': conf.info.name.toUpperCase(),
+			'{author}': conf.info.author ?? 'null',
+			'{version}': conf.info.version,
 
-		'{webroot}': '/',
-		'{webroot/public}': `/extensions/${conf.info.identifier}`,
-		'{webroot/fs}': `/fs/extensions/${conf.info.identifier}`
+			'{random}': number.generate(0, 99999).toString(),
+			'{timestamp}': Math.floor(Date.now() / 1000).toString(),
+			'{mode}': 'local',
+			'{target}': `ainx@${pckgVersion}`,
+			'{is_target}': 'false',
+
+			'{root}': process.cwd(),
+			'{root/public}': `${process.cwd()}/.blueprint/extensions/${conf.info.identifier}/${conf.data?.public ?? 'public'}`,
+			'{root/data}': `${process.cwd()}/.blueprint/extensions/${conf.info.identifier}/${conf.data?.directory ?? 'data'}`,
+
+			'{webroot}': '/',
+			'{webroot/public}': `/extensions/${conf.info.identifier}`,
+			'{webroot/fs}': `/fs/extensions/${conf.info.identifier}`
+		}
+
+		return input.replace(/{[^}]+}/g, (match) => placeholders[match] ?? match)
 	}
-
-	return input.replace(/{[^}]+}/g, (match) => placeholders[match] ?? match)
 }
 
 export async function recursivePlaceholders(conf: BlueprintConfig, dir: string) {

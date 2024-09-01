@@ -90,14 +90,13 @@ export default async function install(args: Args, skipRoutes: boolean = false) {
 		console.log()
 
 		if (conf.data?.public && !fs.existsSync(`public/extensions/${data.data.id}`)) {
-			console.log(chalk.gray('Copying public files'), chalk.cyan(conf.data.public), chalk.gray('...'))
+			console.log(chalk.gray('Linking public files'), chalk.cyan(conf.data.public), chalk.gray('...'))
 
-			await fs.promises.mkdir(`public/extensions/${data.data.id}`, { recursive: true })
-			await fs.promises.cp(path.join('/tmp/ainx/addon', conf.data.public), `public/extensions/${data.data.id}`, { recursive: true })
-
+			await fs.promises.cp(path.join('/tmp/ainx/addon', conf.data.public), path.join('.blueprint/extensions', data.data.id, conf.data.public), { recursive: true })
+			await fs.promises.symlink(path.join(process.cwd(), '.blueprint/extensions', data.data.id, conf.data.public), path.join(process.cwd(), 'public/extensions', data.data.id),)
 			await blueprint.recursivePlaceholders(conf, `public/extensions/${data.data.id}`)
 
-			console.log(chalk.gray('Copying public files'), chalk.cyan(conf.data.public), chalk.gray('...'), chalk.bold.green('Done'))
+			console.log(chalk.gray('Linking public files'), chalk.cyan(conf.data.public), chalk.gray('...'), chalk.bold.green('Done'))
 		}
 
 		if (conf.data?.directory && !fs.existsSync(`.blueprint/extensions/${data.data.id}`)) {
