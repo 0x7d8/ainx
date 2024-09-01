@@ -200,13 +200,14 @@ export default async function install(args: Args, skipRoutes: boolean = false) {
 						if (!fs.existsSync(step.destination)) await fs.promises.mkdir(step.destination, { recursive: true })
 
 						await fs.promises.cp(step.source, step.destination, { recursive: true })
+						await blueprint.recursivePlaceholders(conf, step.destination)
 					} else {
 						if (!fs.existsSync(path.dirname(step.destination))) await fs.promises.mkdir(path.dirname(step.destination), { recursive: true })
 
-						await fs.promises.cp(step.source, step.destination)
+						const content = await fs.promises.readFile(step.source, 'utf-8')
+						await fs.promises.writeFile(step.destination, blueprint.placeholders(conf, content))
 					}
 
-					await blueprint.recursivePlaceholders(conf, step.destination)
 					console.log(chalk.gray('Copying'), chalk.cyan(step.source), chalk.gray('to'), chalk.cyan(step.destination), chalk.gray('...'), chalk.bold.green('Done'))
 
 					break
