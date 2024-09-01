@@ -37,12 +37,7 @@ export type BlueprintConfig = {
 export function config(raw: string) {
 	const data = yaml.load(raw) as BlueprintConfig
 
-	return Object.assign(data, {
-		info: {
-			...data.info,
-			flags: data.info.flags?.split(',') ?? []
-		}
-	})
+	return data
 }
 
 export function environment(conf: BlueprintConfig) {

@@ -60,7 +60,13 @@ yargs(hideBin(process.argv))
       description: 'the file to use to upgrade'
     }),
   (rg) => upgrade(rg))
-  .command('bundle', 'bundle an addon', (yargs) => yargs,
+  .command('bundle', 'bundle an addon', (yargs) => yargs
+    .option('ainx', {
+      alias: 'a',
+      type: 'boolean',
+      description: 'only create an ainx file',
+      default: false
+    }),
   (rg) => bundle(rg))
   .command('rebuild', 'rebuild panel ui', (yargs) => yargs,
   (rg) => rebuild(rg))

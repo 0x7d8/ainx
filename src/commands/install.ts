@@ -19,7 +19,7 @@ export type Args = {
 
 export default async function install(args: Args, skipRoutes: boolean = false) {
 	if (!args.file.endsWith('.ainx')) {
-		console.error(chalk.red('Invalid file type, file must end in'), chalk.green('.ainx'))
+		console.error(chalk.red('Invalid file type, file must end in'), chalk.cyan('.ainx'))
 		process.exit(1)
 	}
 
@@ -108,7 +108,7 @@ export default async function install(args: Args, skipRoutes: boolean = false) {
 
 			await blueprint.recursivePlaceholders(conf, `.blueprint/extensions/${data.data.id}/private`)
 
-			if (conf.info.flags.includes('hasInstallScript') && fs.existsSync(`.blueprint/extensions/${data.data.id}/private/install.sh`)) {
+			if (conf.info.flags?.includes('hasInstallScript') && fs.existsSync(`.blueprint/extensions/${data.data.id}/private/install.sh`)) {
 				const cmd = cp.spawn('bash', [`.blueprint/extensions/${data.data.id}/private/install.sh`], {
 					stdio: 'inherit',
 					cwd: process.cwd(),

@@ -75,7 +75,7 @@ export default async function remove(args: Args, skipRoutes: boolean = false) {
 		}
 
 		if (conf.data?.directory) {
-			if (conf.info.flags.includes('hasRemoveScript') && fs.existsSync(`.blueprint/extensions/${data.data.id}/private/remove.sh`)) {
+			if (conf.info.flags?.includes('hasRemoveScript') && fs.existsSync(`.blueprint/extensions/${data.data.id}/private/remove.sh`)) {
 				const cmd = cp.spawn('bash', [`.blueprint/extensions/${data.data.id}/private/remove.sh`], {
 					stdio: 'inherit',
 					cwd: process.cwd(),

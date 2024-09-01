@@ -11,7 +11,7 @@ export type Args = {
 
 export default async function upgrade(args: Args) {
 	if (!args.file.endsWith('.ainx')) {
-		console.error(chalk.red('Invalid file type, file must end in'), chalk.green('.ainx'))
+		console.error(chalk.red('Invalid file type, file must end in'), chalk.cyan('.ainx'))
 		process.exit(1)
 	}
 
