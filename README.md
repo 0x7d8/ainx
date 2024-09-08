@@ -33,9 +33,6 @@ ainx
 [x] Scripts
   [x] Install
   [x] Remove
-[ ] Wrappers
-  [ ] Admin
-  [ ] Dashboard
 [x] Placeholders
   [x] v2
   [x] v1
@@ -44,7 +41,14 @@ ainx
   [x] forceLegacyPlaceholders
   [x] hasInstallScript
   [x] hasRemoveScript
-[ ] $blueprint
+[x] $blueprint
 [ ] Artisan Console
-[ ] Admin views
+[ ] Admin
+  [ ] Views
+  [x] CSS
+  [ ] Wrappers
+[ ] Dashboard
+  [ ] Wrappers
+  [x] CSS
+  [ ] Components
 ```

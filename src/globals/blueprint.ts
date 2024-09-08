@@ -1,8 +1,9 @@
 import yaml from "js-yaml"
 import { version as pckgVersion } from "../../package.json"
-import { number } from "@rjweb/utils"
+import { number, system } from "@rjweb/utils"
 import * as fs from "fs"
 import chalk from "chalk"
+import path from "path"
 
 export type BlueprintConfig = {
 	info: {
@@ -22,6 +23,15 @@ export type BlueprintConfig = {
 			application?: string
 			web?: string
 		}
+	}
+
+	admin: {
+		view: string
+		css?: string
+	}
+
+	dashboard?: {
+		css?: string
 	}
 
 	data?: {
@@ -54,7 +64,7 @@ export function environment(conf: BlueprintConfig) {
 export function placeholders(conf: BlueprintConfig, input: string): string {
 	if (conf.info.flags?.includes('ignorePlaceholders')) return input
 
-	if (conf.info.flags?.includes('forceLegacyPlaceholders') || conf.info.target.includes('indev') || conf.info.target.includes('alpha')) {
+	if (conf.info.flags?.includes('forceLegacyPlaceholders') || conf.info.target.includes('indev-') || conf.info.target.includes('alpha-')) {
 		const placeholders: Record<string, string> = {
 			'^#version#^': conf.info.version,
 			'^#author#^': conf.info.author ?? 'null',
@@ -62,8 +72,8 @@ export function placeholders(conf: BlueprintConfig, input: string): string {
 			'^#identifier#^': conf.info.identifier,
 
 			'^#path#^': process.cwd(),
-			'^#datapath#^': `${process.cwd()}/.blueprint/extensions/${conf.info.identifier}/${conf.data?.directory ?? 'data'}`,
-			'^#publicpath#^': `${process.cwd()}/.blueprint/extensions/${conf.info.identifier}/${conf.data?.public ?? 'public'}`,
+			'^#datapath#^': `${process.cwd()}/.blueprint/extensions/${conf.info.identifier}/private`,
+			'^#publicpath#^': `${process.cwd()}/.blueprint/extensions/${conf.info.identifier}/public`,
 			'^#installmode#^': 'normal',
 			'^#blueprintversion#^': `ainx@${pckgVersion}`,
 			'^#timestamp#^': Math.floor(Date.now() / 1000).toString()
@@ -87,30 +97,35 @@ export function placeholders(conf: BlueprintConfig, input: string): string {
 			'{is_target}': 'false',
 
 			'{root}': process.cwd(),
-			'{root/public}': `${process.cwd()}/.blueprint/extensions/${conf.info.identifier}/${conf.data?.public ?? 'public'}`,
-			'{root/data}': `${process.cwd()}/.blueprint/extensions/${conf.info.identifier}/${conf.data?.directory ?? 'data'}`,
+			'{root/public}': `${process.cwd()}/.blueprint/extensions/${conf.info.identifier}/public`,
+			'{root/data}': `${process.cwd()}/.blueprint/extensions/${conf.info.identifier}/private`,
 
 			'{webroot}': '/',
 			'{webroot/public}': `/extensions/${conf.info.identifier}`,
 			'{webroot/fs}': `/fs/extensions/${conf.info.identifier}`
 		}
 
-		return input.replace(/{[^}]+}/g, (match) => placeholders[match] ?? match)
+		return input.replace(/\{[^\n\r ]*?\}/g, (match) => placeholders[match] ?? match)
 	}
 }
 
-export async function recursivePlaceholders(conf: BlueprintConfig, dir: string) {
+export async function recursivePlaceholders(conf: BlueprintConfig, dir: string, dirLabel = '') {
 	if (conf.info.flags?.includes('ignorePlaceholders')) return
 
 	for await (const file of await fs.promises.opendir(dir)) {
-		if (file.isDirectory()) continue
+		if (file.isDirectory()) {
+			await recursivePlaceholders(conf, path.join(dir, file.name), `${dirLabel}${file.name}/`)
 
-		const content = await fs.promises.readFile(`${dir}/${file.name}`)
+			continue
+		}
 
-		console.log(chalk.gray('Processing Placeholders on'), chalk.cyan(file.name), chalk.gray('...'))
+		const content = await fs.promises.readFile(`${dir}/${file.name}`),
+			label = `${dirLabel}${file.name}`
+
+		console.log(chalk.gray('Processing Placeholders on'), chalk.cyan(label), chalk.gray('...'))
 
 		if (content.includes(Buffer.from([0]))) {
-			console.error(chalk.gray('Processing Placeholders on'), chalk.cyan(file.name), chalk.gray('...'), chalk.bold.red('Binary'))
+			console.error(chalk.gray('Processing Placeholders on'), chalk.cyan(label), chalk.gray('...'), chalk.bold.red('Binary'))
 			continue
 		}
 
@@ -120,9 +135,68 @@ export async function recursivePlaceholders(conf: BlueprintConfig, dir: string) 
 		if (text !== string) {
 			await fs.promises.writeFile(`${dir}/${file.name}`, text)
 
-			console.log(chalk.gray('Processing Placeholders on'), chalk.cyan(file.name), chalk.gray('...'), chalk.bold.green('Done'))
+			console.log(chalk.gray('Processing Placeholders on'), chalk.cyan(label), chalk.gray('...'), chalk.bold.green('Done'))
 		} else {
-			console.log(chalk.gray('Processing Placeholders on'), chalk.cyan(file.name), chalk.gray('...'), chalk.bold.yellow('Skipped'))
+			console.log(chalk.gray('Processing Placeholders on'), chalk.cyan(label), chalk.gray('...'), chalk.bold.yellow('Skipped'))
 		}
 	}
+}
+
+export async function updateBlueprintCache() {
+	const php = `
+		use Illuminate\\Support\\Facades\\DB;
+
+		$cache = DB::table('settings')->where('key', 'blueprint::cache')->first();
+
+		if ($cache) {
+			DB::table('settings')->where('key', 'blueprint::cache')->update(['value' => '${Math.floor(Date.now() / 1000)}']);
+		} else {
+			DB::table('settings')->insert(['key' => 'blueprint::cache', 'value' => '${Math.floor(Date.now() / 1000)}']);
+		}
+	`
+
+	await fs.promises.writeFile('.blueprint/__ainx__tmp.php', php)
+
+	console.log(chalk.gray('Updating Blueprint Cache ...'))
+
+	await system.execute('php artisan tinker -n < .blueprint/__ainx__tmp.php', { async: true }).catch(() => null)
+
+	await fs.promises.rm('.blueprint/__ainx__tmp.php')
+
+	console.log(chalk.gray('Updating Blueprint Cache ...'), chalk.bold.green('Done'))
+}
+
+import BlueprintAdminLibrary from "src/compat/app/BlueprintFramework/Libraries/ExtensionLibrary/Admin/BlueprintAdminLibrary.php"
+import BlueprintClientLibrary from "src/compat/app/BlueprintFramework/Libraries/ExtensionLibrary/Client/BlueprintClientLibrary.php"
+import BlueprintConsoleLibrary from "src/compat/app/BlueprintFramework/Libraries/ExtensionLibrary/Console/BlueprintConsoleLibrary.php"
+
+import ScriptLibraryGrabEnv from "src/compat/scripts/libraries/grabenv.sh"
+import ScriptLibraryLogFormat from "src/compat/scripts/libraries/logFormat.sh"
+import ScriptLibraryParseYaml from "src/compat/scripts/libraries/parse_yaml.sh"
+
+export async function insertCompatFiles() {
+	console.log(chalk.gray('Inserting Compatibility Files ...'))
+
+	const paths: Record<string, string> = {
+		'app/BlueprintFramework/Libraries/ExtensionLibrary/Admin/BlueprintAdminLibrary.php': BlueprintAdminLibrary,
+		'app/BlueprintFramework/Libraries/ExtensionLibrary/Client/BlueprintClientLibrary.php': BlueprintClientLibrary,
+		'app/BlueprintFramework/Libraries/ExtensionLibrary/Console/BlueprintConsoleLibrary.php': BlueprintConsoleLibrary,
+
+		'scripts/libraries/grabenv.sh': ScriptLibraryGrabEnv,
+		'scripts/libraries/logFormat.sh': ScriptLibraryLogFormat,
+		'scripts/libraries/parse_yaml.sh': ScriptLibraryParseYaml,
+		'.blueprint/lib/grabenv.sh': ScriptLibraryGrabEnv,
+		'.blueprint/lib/logFormat.sh': ScriptLibraryLogFormat,
+		'.blueprint/lib/parse_yaml.sh': ScriptLibraryParseYaml
+	}
+
+	for (const [ path, content ] of Object.entries(paths)) {
+		const dir = path.split('/').slice(0, -1).join('/')
+
+		if (!fs.existsSync(dir)) await fs.promises.mkdir(dir, { recursive: true })
+
+		await fs.promises.writeFile(path, content)
+	}
+
+	console.log(chalk.gray('Inserting Compatibility Files ...'), chalk.bold.green('Done'))
 }

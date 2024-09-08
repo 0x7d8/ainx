@@ -71,7 +71,22 @@ export default async function remove(args: Args, skipRoutes: boolean = false) {
 		console.log()
 
 		if (conf.data?.public) {
-			if (fs.existsSync(`public/extensions/${data.data.id}`)) await fs.promises.rm(`public/extensions/${data.data.id}`, { recursive: true })
+			const publicStat = await fs.promises.stat(`public/extensions/${data.data.id}`).catch(() => null)
+			if (publicStat?.isSymbolicLink() || publicStat?.isDirectory()) await fs.promises.rm(`public/extensions/${data.data.id}`, { recursive: true })
+		}
+
+		if (conf.admin.css) {
+			console.log(chalk.gray('Removing admin css'), chalk.cyan(conf.admin.css), chalk.gray('...'))
+
+			await filesystem.replace('resources/views/layouts/admin.blade.php', `\n    <link rel="stylesheet" href="/extensions/${data.data.id}/_assets/admin.style.css?t={{ \\Illuminate\\Support\\Facades\\DB::table('settings')->where('key', 'blueprint::cache')->first()->value }}">`, '')
+
+			console.log(chalk.gray('Removing admin css'), chalk.cyan(conf.admin.css), chalk.gray('...'), chalk.bold.green('Done'))
+		}
+
+		if (conf.dashboard?.css) {
+			console.log(chalk.gray('Removing dashboard css'), chalk.cyan(conf.dashboard.css), chalk.gray('...'))
+
+			await filesystem.replace('resources/views/templates/wrapper.blade.php', `\n    <link rel="stylesheet" href="/extensions/${data.data.id}/_assets/dashboard.style.css?t={{ \\Illuminate\\Support\\Facades\\DB::table('settings')->where('key', 'blueprint::cache')->first()->value }}">`, '')
 		}
 
 		if (conf.data?.directory) {

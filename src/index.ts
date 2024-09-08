@@ -27,6 +27,12 @@ yargs(hideBin(process.argv))
       type: 'boolean',
       description: 'force install',
       default: false
+    })
+    .option('rebuild', {
+      alias: 'r',
+      type: 'boolean',
+      description: 'rebuild panel ui after installation',
+      default: true
     }),
   (rg) => install(rg))
   .command('remove <addon>', 'remove an addon', (yargs) => yargs
