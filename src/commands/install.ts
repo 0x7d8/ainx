@@ -96,6 +96,7 @@ export default async function install(args: Args, skipRoutes: boolean = false) {
 		const storageStat = await fs.promises.stat(`storage/extensions/${data.data.id}`).catch(() => null)
 		if (!storageStat?.isSymbolicLink() && !storageStat?.isDirectory()) {
 			await fs.promises.mkdir(`.blueprint/extensions/${data.data.id}/fs`, { recursive: true })
+			await fs.promises.mkdir('storage/extensions', { recursive: true })
 			await fs.promises.symlink(path.join(process.cwd(), '.blueprint/extensions', data.data.id, 'fs'), path.join(process.cwd(), 'storage/extensions', data.data.id))
 		}
 
