@@ -144,13 +144,25 @@ export async function recursivePlaceholders(conf: BlueprintConfig, dir: string, 
 }
 
 export async function applyPermissions() {
+	console.log(chalk.gray('Applying Permissions ...'))
+
 	await system.execute('chmod -R 755 storage/* bootstrap/cache', { async: true }).catch(() => null)
 
 	const users = ['www-data', 'nginx', 'apache']
 
 	for (const user of users) {
-		await system.execute(`chown -R ${user}:${user} /var/www/pterodactyl/*`, { async: true }).catch(() => null)
+		console.log(chalk.gray('Applying Permissions as'), chalk.cyan(user), chalk.gray('...'))
+
+		try {
+			await system.execute(`chown -R ${user}:${user} /var/www/pterodactyl/*`, { async: true })
+
+			console.log(chalk.gray('Applying Permissions as'), chalk.cyan(user), chalk.gray('...'), chalk.bold.green('Done'))
+		} catch {
+			console.log(chalk.gray('Applying Permissions as'), chalk.cyan(user), chalk.gray('...'), chalk.bold.red('Failed'))
+		}
 	}
+
+	console.log(chalk.gray('Applying Permissions ...'), chalk.bold.green('Done'))
 }
 
 export async function updateBlueprintCache() {

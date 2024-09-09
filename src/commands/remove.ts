@@ -69,7 +69,7 @@ export default async function remove(args: Args, skipRoutes: boolean = false) {
 		if (conf.info.author) console.log(chalk.gray('Addon Author:'), chalk.cyan(conf.info.author))
 		console.log()
 
-		if (fs.existsSync(`storage/extensions/${data.data.id}`)) await fs.promises.rm(`storage/extensions/${data.data.id}`, { recursive: true })
+		await fs.promises.rm(`storage/extensions/${data.data.id}`, { recursive: true }).catch(() => null)
 
 		if (conf.data?.public) {
 			const publicStat = await fs.promises.stat(`public/extensions/${data.data.id}`).catch(() => null)
@@ -141,7 +141,7 @@ export default async function remove(args: Args, skipRoutes: boolean = false) {
 		if (conf.requests?.controllers) {
 			console.log(chalk.gray('Removing controllers'), chalk.cyan(`app/BlueprintFramework/Extensions/${data.data.id}`), chalk.gray('...'))
 
-			if (fs.existsSync(`app/BlueprintFramework/Extensions/${data.data.id}`)) await fs.promises.rm(`app/BlueprintFramework/Extensions/${data.data.id}`, { recursive: true })
+			await fs.promises.rm(`app/BlueprintFramework/Extensions/${data.data.id}`, { recursive: true }).catch(() => null)
 
 			console.log(chalk.gray('Removing controllers'), chalk.cyan(`app/BlueprintFramework/Extensions/${data.data.id}`), chalk.gray('...'), chalk.bold.green('Done'))
 		}

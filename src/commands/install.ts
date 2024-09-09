@@ -93,7 +93,11 @@ export default async function install(args: Args, skipRoutes: boolean = false) {
 
 		await blueprint.insertCompatFiles()
 
-		if (!fs.existsSync(`storage/extensions/${data.data.id}`)) await fs.promises.mkdir(`storage/extensions/${data.data.id}`, { recursive: true })
+		const storageStat = await fs.promises.stat(`storage/extensions/${data.data.id}`).catch(() => null)
+		if (!storageStat?.isSymbolicLink() && !storageStat?.isDirectory()) {
+			await fs.promises.mkdir(`.blueprint/extensions/${data.data.id}/fs`, { recursive: true })
+			await fs.promises.symlink(path.join(process.cwd(), '.blueprint/extensions', data.data.id, 'fs'), path.join(process.cwd(), 'storage/extensions', data.data.id))
+		}
 
 		const publicStat = await fs.promises.stat(path.join(process.cwd(), 'public/extensions', data.data.id)).catch(() => null)
 		if (conf.data?.public && !publicStat?.isSymbolicLink() && !publicStat?.isDirectory()) {
@@ -200,17 +204,18 @@ export default async function install(args: Args, skipRoutes: boolean = false) {
 			console.log(chalk.gray('Adding base router'), chalk.gray(`routes/base-${data.data.id}.php`), chalk.gray('...'), chalk.bold.green('Done'))
 		}
 
-		if (conf.requests?.controllers && !fs.existsSync(`app/BlueprintFramework/Extensions/${data.data.id}`)) {
-			console.log(chalk.gray('Copying controllers'), chalk.cyan(conf.requests.controllers), chalk.gray('...'))
+		const controllerStat = await fs.promises.stat(`app/BlueprintFramework/Extensions/${data.data.id}`).catch(() => null)
+		if (conf.requests?.controllers && !controllerStat?.isSymbolicLink() && !controllerStat?.isDirectory()) {
+			console.log(chalk.gray('Linking controllers'), chalk.cyan(conf.requests.controllers), chalk.gray('...'))
 
-			if (fs.existsSync(`app/BlueprintFramework/Extensions/${data.data.id}`)) await fs.promises.rm(`app/BlueprintFramework/Extensions/${data.data.id}`, { recursive: true })
+			await fs.promises.mkdir(`.blueprint/extensions/${data.data.id}/controllers`, { recursive: true })
+			await fs.promises.cp(path.join('/tmp/ainx/addon', conf.requests.controllers), `.blueprint/extensions/${data.data.id}/controllers`, { recursive: true })
 
-			await fs.promises.mkdir(`app/BlueprintFramework/Extensions/${data.data.id}`, { recursive: true })
-			await fs.promises.cp(path.join('/tmp/ainx/addon', conf.requests.controllers), `app/BlueprintFramework/Extensions/${data.data.id}`, { recursive: true })
+			await fs.promises.symlink(path.join(process.cwd(), '.blueprint/extensions', data.data.id, 'controllers'), path.join(process.cwd(), 'app/BlueprintFramework/Extensions', data.data.id))
 
 			await blueprint.recursivePlaceholders(conf, `app/BlueprintFramework/Extensions/${data.data.id}`)
 
-			console.log(chalk.gray('Copying controllers'), chalk.cyan(conf.requests.controllers), chalk.gray('...'), chalk.bold.green('Done'))
+			console.log(chalk.gray('Linking controllers'), chalk.cyan(conf.requests.controllers), chalk.gray('...'), chalk.bold.green('Done'))
 		}
 
 		if (conf.database?.migrations && !fs.existsSync(`database/migrations-${data.data.id}`)) {
