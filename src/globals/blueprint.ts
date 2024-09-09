@@ -66,20 +66,21 @@ export function placeholders(conf: BlueprintConfig, input: string): string {
 
 	if (conf.info.flags?.includes('forceLegacyPlaceholders') || conf.info.target.includes('indev-') || conf.info.target.includes('alpha-')) {
 		const placeholders: Record<string, string> = {
-			'^#version#^': conf.info.version,
-			'^#author#^': conf.info.author ?? 'null',
-			'^#name#^': conf.info.name,
-			'^#identifier#^': conf.info.identifier,
+			'version': conf.info.version,
+			'author': conf.info.author ?? 'null',
+			'name': conf.info.name,
+			'identifier': conf.info.identifier,
 
-			'^#path#^': process.cwd(),
-			'^#datapath#^': `${process.cwd()}/.blueprint/extensions/${conf.info.identifier}/private`,
-			'^#publicpath#^': `${process.cwd()}/.blueprint/extensions/${conf.info.identifier}/public`,
-			'^#installmode#^': 'normal',
-			'^#blueprintversion#^': `ainx@${pckgVersion}`,
-			'^#timestamp#^': Math.floor(Date.now() / 1000).toString()
+			'path': process.cwd(),
+			'datapath': `${process.cwd()}/.blueprint/extensions/${conf.info.identifier}/private`,
+			'publicpath': `${process.cwd()}/.blueprint/extensions/${conf.info.identifier}/public`,
+			'installmode': 'normal',
+			'blueprintversion': `ainx@${pckgVersion}`,
+			'timestamp': Math.floor(Date.now() / 1000).toString()
 		}
 
-		return input.replace(/(\^#[^#]+#\^)/g, (match) => placeholders[match] ?? match)
+		return input.replace(/(\^#[^\n\r# ]+#\^)/g, (match) => placeholders[match.slice(2, -2)] ?? match)
+			.replace(/(__[^\n\r_ ]+__)/g, (match) => placeholders[match.slice(2, -2)] ?? match)
 	} else {
 		const placeholders: Record<string, string> = {
 			'{identifier}': conf.info.identifier,

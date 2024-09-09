@@ -46,4 +46,18 @@ class BlueprintConsoleLibrary
       return false;
     }
   }
+
+  public function extensionList(): array {
+    $extensions = [];
+    $files = scandir(".blueprint/extensions");
+    foreach($files as $file) {
+      if($file != "." && $file != "..") {
+        if(file_exists(".blueprint/extensions/$file/$file.ainx")) {
+          $extensions[] = $file;
+        }
+      }
+    }
+
+    return $extensions;
+  }
 }

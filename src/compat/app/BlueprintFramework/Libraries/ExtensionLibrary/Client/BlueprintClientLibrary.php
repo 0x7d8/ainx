@@ -47,6 +47,20 @@ class BlueprintClientLibrary
     }
   }
 
+  public function extensionList(): array {
+    $extensions = [];
+    $files = scandir(".blueprint/extensions");
+    foreach($files as $file) {
+      if($file != "." && $file != "..") {
+        if(file_exists(".blueprint/extensions/$file/$file.ainx")) {
+          $extensions[] = $file;
+        }
+      }
+    }
+
+    return $extensions;
+  }
+
   public function importStylesheet($url): string {
     $cache = $this->dbGet("blueprint", "cache");
     return "<link rel=\"stylesheet\" href=\"$url?v=$cache\">";

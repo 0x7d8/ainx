@@ -70,6 +70,8 @@ export default async function remove(args: Args, skipRoutes: boolean = false) {
 		if (conf.info.author) console.log(chalk.gray('Addon Author:'), chalk.cyan(conf.info.author))
 		console.log()
 
+		if (fs.existsSync(`storage/extensions/${data.data.id}`)) await fs.promises.rm(`storage/extensions/${data.data.id}`, { recursive: true })
+
 		if (conf.data?.public) {
 			const publicStat = await fs.promises.stat(`public/extensions/${data.data.id}`).catch(() => null)
 			if (publicStat?.isSymbolicLink() || publicStat?.isDirectory()) await fs.promises.rm(`public/extensions/${data.data.id}`, { recursive: true })

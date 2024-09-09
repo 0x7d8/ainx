@@ -92,6 +92,8 @@ export default async function install(args: Args, skipRoutes: boolean = false) {
 
 		await blueprint.insertCompatFiles()
 
+		if (!fs.existsSync(`storage/extensions/${data.data.id}`)) await fs.promises.mkdir(`storage/extensions/${data.data.id}`, { recursive: true })
+
 		const publicStat = await fs.promises.stat(path.join(process.cwd(), 'public/extensions', data.data.id)).catch(() => null)
 		if (conf.data?.public && !publicStat?.isSymbolicLink() && !publicStat?.isDirectory()) {
 			console.log(chalk.gray('Linking public files'), chalk.cyan(conf.data.public), chalk.gray('...'))
