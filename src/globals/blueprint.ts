@@ -143,6 +143,16 @@ export async function recursivePlaceholders(conf: BlueprintConfig, dir: string, 
 	}
 }
 
+export async function applyPermissions() {
+	await system.execute('chmod -R 755 storage/* bootstrap/cache', { async: true }).catch(() => null)
+
+	const users = ['www-data', 'nginx', 'apache']
+
+	for (const user of users) {
+		await system.execute(`chown -R ${user}:${user} /var/www/pterodactyl/*`, { async: true }).catch(() => null)
+	}
+}
+
 export async function updateBlueprintCache() {
 	const php = `
 		use Illuminate\\Support\\Facades\\DB;

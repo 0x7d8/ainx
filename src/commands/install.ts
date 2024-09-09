@@ -367,6 +367,7 @@ export default async function install(args: Args, skipRoutes: boolean = false) {
 		}	catch { }
 
 		await blueprint.updateBlueprintCache()
+		await blueprint.applyPermissions()
 
 		if (!fs.existsSync(`.blueprint/extensions/${data.data.id}`)) await fs.promises.mkdir(`.blueprint/extensions/${data.data.id}`, { recursive: true })
 		await fs.promises.cp(args.file, `.blueprint/extensions/${data.data.id}/${data.data.id}.ainx`)
