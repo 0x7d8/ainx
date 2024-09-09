@@ -155,6 +155,7 @@ export async function applyPermissions() {
 
 		try {
 			await system.execute(`chown -R ${user}:${user} /var/www/pterodactyl/*`, { async: true })
+			await system.execute(`chown -R ${user}:${user} /var/www/pterodactyl/.*`, { async: true })
 
 			console.log(chalk.gray('Applying Permissions as'), chalk.cyan(user), chalk.gray('...'), chalk.bold.green('Done'))
 		} catch {
