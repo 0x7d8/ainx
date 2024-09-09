@@ -2,9 +2,7 @@ import chalk from "chalk"
 import fs from "fs"
 import enquirer from "enquirer"
 import AdmZip from "adm-zip"
-import { version as pckgVersion } from "../../package.json"
 import { manifest } from "src/types/manifest"
-import yaml from "js-yaml"
 import { filesystem, system } from "@rjweb/utils"
 import cp from "child_process"
 import rebuild from "src/commands/rebuild"
@@ -17,6 +15,7 @@ export type Args = {
 	rebuild: boolean
 	force: boolean
 	migrate: boolean
+	skipSteps: boolean
 }
 
 export default async function remove(args: Args, skipRoutes: boolean = false) {
@@ -156,7 +155,7 @@ export default async function remove(args: Args, skipRoutes: boolean = false) {
 			console.log(chalk.gray('Rolling back migrations'), chalk.cyan(`database/migrations-${data.data.id}`), chalk.gray('...'), chalk.bold.green('Done'))
 		}
 
-		for (const step of data.data.installation.filter((step) => (step.type as any) === 'dashboard-route').concat(data.data.removal ?? [])) {
+		if (!args.skipSteps) for (const step of data.data.installation.filter((step) => (step.type as any) === 'dashboard-route').concat(data.data.removal ?? [])) {
 			switch (step.type) {
 				case "copy": {
 					console.log(chalk.gray('Copying'), chalk.cyan(step.source), chalk.gray('to'), chalk.cyan(step.destination), chalk.gray('...'))

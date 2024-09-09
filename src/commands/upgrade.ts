@@ -7,6 +7,8 @@ import { intercept } from "src/globals/log"
 
 export type Args = {
 	file: string
+	skipSteps: boolean
+	rebuild: boolean
 }
 
 export default async function upgrade(args: Args) {
@@ -42,12 +44,15 @@ export default async function upgrade(args: Args) {
 		addon: args.file.replace('.ainx', ''),
 		force: true,
 		migrate: false,
-		rebuild: false
+		rebuild: false,
+		skipSteps: args.skipSteps
 	}, true)
 
 	await install({
 		file: args.file,
-		force: true
+		force: true,
+		rebuild: args.rebuild,
+		skipSteps: args.skipSteps
 	}, true)
 
 	console.log(chalk.gray('Upgrading ...'), chalk.bold.green('Done'))

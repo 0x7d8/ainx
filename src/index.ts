@@ -33,6 +33,12 @@ yargs(hideBin(process.argv))
       type: 'boolean',
       description: 'rebuild panel ui after installation',
       default: true
+    })
+    .option('skipSteps', {
+      alias: 's',
+      type: 'boolean',
+      description: 'skip ainx metadata installation steps',
+      default: false
     }),
   (rg) => install(rg))
   .command('remove <addon>', 'remove an addon', (yargs) => yargs
@@ -58,6 +64,12 @@ yargs(hideBin(process.argv))
       type: 'boolean',
       description: 'migrate data after removal (removes addon data from database)',
       default: false
+    })
+    .option('skipSteps', {
+      alias: 's',
+      type: 'boolean',
+      description: 'skip ainx metadata removal steps',
+      default: false
     }),
   (rg) => remove(rg))
   .command('upgrade <file>', 'upgrade an addon', (yargs) => yargs
@@ -65,6 +77,18 @@ yargs(hideBin(process.argv))
       demandOption: true,
       type: 'string',
       description: 'the file to use to upgrade'
+    })
+    .option('skipSteps', {
+      alias: 's',
+      type: 'boolean',
+      description: 'skip ainx metadata upgrade steps',
+      default: false
+    })
+    .option('rebuild', {
+      alias: 'r',
+      type: 'boolean',
+      description: 'rebuild panel ui after upgrade',
+      default: true
     }),
   (rg) => upgrade(rg))
   .command('bundle', 'bundle an addon', (yargs) => yargs

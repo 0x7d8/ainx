@@ -16,6 +16,7 @@ export type Args = {
 	file: string
 	force: boolean
 	rebuild: boolean
+	skipSteps: boolean
 }
 
 export default async function install(args: Args, skipRoutes: boolean = false) {
@@ -227,7 +228,7 @@ export default async function install(args: Args, skipRoutes: boolean = false) {
 			console.log(chalk.gray('Copying migrations'), chalk.cyan(conf.database.migrations), chalk.gray('...'), chalk.bold.green('Done'))
 		}
 
-		for (const step of data.data.installation) {
+		if (!args.skipSteps) for (const step of data.data.installation) {
 			switch (step.type) {
 				case "copy": {
 					console.log(chalk.gray('Copying'), chalk.cyan(step.source), chalk.gray('to'), chalk.cyan(step.destination), chalk.gray('...'))
