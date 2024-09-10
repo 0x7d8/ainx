@@ -30,6 +30,19 @@ export default async function install(args: Args, skipRoutes: boolean = false) {
 		process.exit(1)
 	}
 
+	const yarn = await system.execute('yarn --version', { async: true }).catch(() => null)
+	if (!yarn) {
+		console.error(chalk.red('Yarn is required to install addons'))
+		console.error(chalk.gray('Install yarn using:'), chalk.cyan('npm i -g yarn'))
+		process.exit(1)
+	}
+
+	if (!fs.existsSync('yarn.lock')) {
+		console.error(chalk.red('Yarn lock file not found'))
+		console.error(chalk.red('Please navigate to the pterodactyl panel root directory before running ainx.'))
+		process.exit(1)
+	}
+
 	const log = intercept()
 
 	try {
@@ -212,6 +225,7 @@ export default async function install(args: Args, skipRoutes: boolean = false) {
 			await fs.promises.mkdir(`.blueprint/extensions/${data.data.id}/controllers`, { recursive: true })
 			await fs.promises.cp(path.join('/tmp/ainx/addon', conf.requests.controllers), `.blueprint/extensions/${data.data.id}/controllers`, { recursive: true })
 
+			await fs.promises.mkdir('app/BlueprintFramework/Extensions', { recursive: true })
 			await fs.promises.symlink(path.join(process.cwd(), '.blueprint/extensions', data.data.id, 'controllers'), path.join(process.cwd(), 'app/BlueprintFramework/Extensions', data.data.id))
 
 			await blueprint.recursivePlaceholders(conf, `app/BlueprintFramework/Extensions/${data.data.id}`)
