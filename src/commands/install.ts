@@ -110,16 +110,16 @@ export default async function install(args: Args, skipRoutes: boolean = false) {
 		if (!storageStat?.isSymbolicLink() && !storageStat?.isDirectory()) {
 			await fs.promises.mkdir(`.blueprint/extensions/${data.data.id}/fs`, { recursive: true })
 			await fs.promises.mkdir('storage/extensions', { recursive: true })
-			await fs.promises.symlink(path.join('.blueprint/extensions', data.data.id, 'fs'), path.join('storage/extensions', data.data.id))
+			await fs.promises.symlink(path.join(process.cwd(), '.blueprint/extensions', data.data.id, 'fs'), path.join(process.cwd(), 'storage/extensions', data.data.id))
 		}
 
-		const publicStat = await fs.promises.stat(path.join('public/extensions', data.data.id)).catch(() => null)
+		const publicStat = await fs.promises.stat(path.join(process.cwd(), 'public/extensions', data.data.id)).catch(() => null)
 		if (conf.data?.public && !publicStat?.isSymbolicLink() && !publicStat?.isDirectory()) {
 			console.log(chalk.gray('Linking public files'), chalk.cyan(conf.data.public), chalk.gray('...'))
 
 			await fs.promises.cp(path.join('/tmp/ainx/addon', conf.data.public), path.join('.blueprint/extensions', data.data.id, 'public'), { recursive: true })
 			await fs.promises.mkdir('public/extensions', { recursive: true })
-			await fs.promises.symlink(path.join('.blueprint/extensions', data.data.id, 'public'), path.join('public/extensions', data.data.id),)
+			await fs.promises.symlink(path.join(process.cwd(), '.blueprint/extensions', data.data.id, 'public'), path.join(process.cwd(), 'public/extensions', data.data.id),)
 			await blueprint.recursivePlaceholders(conf, path.join('.blueprint/extensions', data.data.id, 'public'))
 
 			console.log(chalk.gray('Linking public files'), chalk.cyan(conf.data.public), chalk.gray('...'), chalk.bold.green('Done'))
@@ -135,7 +135,7 @@ export default async function install(args: Args, skipRoutes: boolean = false) {
 			await filesystem.replace('resources/views/layouts/admin.blade.php', '</body>', `</body>\n    <link rel="stylesheet" href="/extensions/${data.data.id}/_assets/admin.style.css?t={{ \\Illuminate\\Support\\Facades\\DB::table('settings')->where('key', 'blueprint::cache')->first()->value }}">`)
 
 			const assetsStat = await fs.promises.stat(`public/extensions/${data.data.id}/_assets`).catch(() => null)
-			if (!assetsStat?.isSymbolicLink() && !assetsStat?.isDirectory()) await fs.promises.symlink(path.join('.blueprint/extensions', data.data.id, 'assets'), path.join('public/extensions', data.data.id, '_assets'))
+			if (!assetsStat?.isSymbolicLink() && !assetsStat?.isDirectory()) await fs.promises.symlink(path.join(process.cwd(), '.blueprint/extensions', data.data.id, 'assets'), path.join(process.cwd(), 'public/extensions', data.data.id, '_assets'))
 
 			console.log(chalk.gray('Applying admin css'), chalk.cyan(conf.admin.css), chalk.gray('...'), chalk.bold.green('Done'))
 		}
@@ -150,7 +150,7 @@ export default async function install(args: Args, skipRoutes: boolean = false) {
 			await filesystem.replace('resources/views/templates/wrapper.blade.php', '</body>', `</body>\n    <link rel="stylesheet" href="/extensions/${data.data.id}/_assets/dashboard.style.css?t={{ \\Illuminate\\Support\\Facades\\DB::table('settings')->where('key', 'blueprint::cache')->first()->value }}">`)
 
 			const assetsStat = await fs.promises.stat(`public/extensions/${data.data.id}/_assets`).catch(() => null)
-			if (!assetsStat?.isSymbolicLink() && !assetsStat?.isDirectory()) await fs.promises.symlink(path.join('.blueprint/extensions', data.data.id, 'assets'), path.join('public/extensions', data.data.id, '_assets'))
+			if (!assetsStat?.isSymbolicLink() && !assetsStat?.isDirectory()) await fs.promises.symlink(path.join(process.cwd(), '.blueprint/extensions', data.data.id, 'assets'), path.join(process.cwd(), 'public/extensions', data.data.id, '_assets'))
 
 			console.log(chalk.gray('Applying dashboard css'), chalk.cyan(conf.dashboard.css), chalk.gray('...'), chalk.bold.green('Done'))
 		}
@@ -219,6 +219,10 @@ export default async function install(args: Args, skipRoutes: boolean = false) {
 		}
 
 		const controllerStat = await fs.promises.stat(`app/BlueprintFramework/Extensions/${data.data.id}`).catch(() => null)
+		if (controllerStat?.isDirectory() || controllerStat?.isSymbolicLink()) {
+			await fs.promises.rm(`app/BlueprintFramework/Extensions/${data.data.id}`, { recursive: true })
+		}
+
 		if (conf.requests?.controllers && !controllerStat?.isSymbolicLink() && !controllerStat?.isDirectory()) {
 			console.log(chalk.gray('Linking controllers'), chalk.cyan(conf.requests.controllers), chalk.gray('...'))
 
@@ -226,7 +230,7 @@ export default async function install(args: Args, skipRoutes: boolean = false) {
 			await fs.promises.cp(path.join('/tmp/ainx/addon', conf.requests.controllers), `.blueprint/extensions/${data.data.id}/controllers`, { recursive: true })
 
 			await fs.promises.mkdir('app/BlueprintFramework/Extensions', { recursive: true })
-			await fs.promises.symlink(path.join('.blueprint/extensions', data.data.id, 'controllers'), path.join('app/BlueprintFramework/Extensions', data.data.id))
+			await fs.promises.symlink(path.join(process.cwd(), '.blueprint/extensions', data.data.id, 'controllers'), path.join(process.cwd(), 'app/BlueprintFramework/Extensions', data.data.id))
 
 			await blueprint.recursivePlaceholders(conf, `app/BlueprintFramework/Extensions/${data.data.id}`)
 
