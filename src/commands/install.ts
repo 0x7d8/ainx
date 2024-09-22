@@ -106,15 +106,25 @@ export default async function install(args: Args, skipRoutes: boolean = false) {
 
 		await blueprint.insertCompatFiles()
 
-		const storageStat = await fs.promises.stat(`storage/extensions/${data.data.id}`).catch(() => null)
-		if (!storageStat?.isSymbolicLink() && !storageStat?.isDirectory()) {
-			await fs.promises.mkdir(`.blueprint/extensions/${data.data.id}/fs`, { recursive: true })
-			await fs.promises.mkdir('storage/extensions', { recursive: true })
-			await fs.promises.symlink(path.join(process.cwd(), '.blueprint/extensions', data.data.id, 'fs'), path.join(process.cwd(), 'storage/extensions', data.data.id))
+		const storageStat = await fs.promises.lstat(`storage/extensions/${data.data.id}`).catch(() => null)
+		if (storageStat?.isSymbolicLink() || storageStat?.isDirectory()) {
+			await fs.promises.rm(`storage/extensions/${data.data.id}`, { recursive: true, force: true })
 		}
 
-		const publicStat = await fs.promises.stat(path.join(process.cwd(), 'public/extensions', data.data.id)).catch(() => null)
-		if (conf.data?.public && !publicStat?.isSymbolicLink() && !publicStat?.isDirectory()) {
+		console.log(chalk.gray('Linking storage files'), chalk.cyan(data.data.id), chalk.gray('...'))
+
+		await fs.promises.mkdir(`.blueprint/extensions/${data.data.id}/fs`, { recursive: true })
+		await fs.promises.mkdir('storage/extensions', { recursive: true })
+		await fs.promises.symlink(path.join(process.cwd(), '.blueprint/extensions', data.data.id, 'fs'), path.join(process.cwd(), 'storage/extensions', data.data.id))
+
+		console.log(chalk.gray('Linking storage files'), chalk.cyan(data.data.id), chalk.gray('...'), chalk.bold.green('Done'))
+
+		const publicStat = await fs.promises.lstat(`public/extensions/${data.data.id}`).catch(() => null)
+		if (publicStat?.isSymbolicLink() || publicStat?.isDirectory()) {
+			await fs.promises.rm(`public/extensions/${data.data.id}`, { recursive: true, force: true })
+		}
+
+		if (conf.data?.public) {
 			console.log(chalk.gray('Linking public files'), chalk.cyan(conf.data.public), chalk.gray('...'))
 
 			await fs.promises.cp(path.join('/tmp/ainx/addon', conf.data.public), path.join('.blueprint/extensions', data.data.id, 'public'), { recursive: true })
@@ -218,12 +228,12 @@ export default async function install(args: Args, skipRoutes: boolean = false) {
 			console.log(chalk.gray('Adding base router'), chalk.gray(`routes/base-${data.data.id}.php`), chalk.gray('...'), chalk.bold.green('Done'))
 		}
 
-		const controllerStat = await fs.promises.stat(`app/BlueprintFramework/Extensions/${data.data.id}`).catch(() => null)
+		const controllerStat = await fs.promises.lstat(`app/BlueprintFramework/Extensions/${data.data.id}`).catch(() => null)
 		if (controllerStat?.isDirectory() || controllerStat?.isSymbolicLink()) {
-			await fs.promises.rm(`app/BlueprintFramework/Extensions/${data.data.id}`, { recursive: true })
+			await fs.promises.rm(`app/BlueprintFramework/Extensions/${data.data.id}`, { recursive: true, force: true })
 		}
 
-		if (conf.requests?.controllers && !controllerStat?.isSymbolicLink() && !controllerStat?.isDirectory()) {
+		if (conf.requests?.controllers) {
 			console.log(chalk.gray('Linking controllers'), chalk.cyan(conf.requests.controllers), chalk.gray('...'))
 
 			await fs.promises.mkdir(`.blueprint/extensions/${data.data.id}/controllers`, { recursive: true })
