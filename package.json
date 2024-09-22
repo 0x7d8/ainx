@@ -1,11 +1,11 @@
 {
-  "version": "1.5.9",
+  "version": "1.5.10",
   "name": "ainx",
   "license": "MIT",
   "type": "module",
   "homepage": "https://github.com/0x7d8/ainx",
   "scripts": {
-    "bundle": "rm -rf lib/* && bun build src/index.ts --target node --bundle --loader .php:text --loader .sh:text --minify --outfile lib/ainx_.js && echo '#!/usr/bin/env node' > lib/ainx.js && echo \"if (parseInt(process.versions.node.split('.')[0]) < 16) {console.error('Node version '+process.versions.node+' is not supported, please use Node.js 16 or higher.');process.exit(1);};if(require('os').platform() === 'win32'){console.error('Ainx does not support Windows.');process.exit(1);};\" >> lib/ainx.js && cat lib/ainx_.js >> lib/ainx.js && rm lib/ainx_.js",
+    "bundle": "rm -rf lib/* && bun build src/index.ts --target node --bundle --loader .php:text --loader .sh:text --minify --outfile lib/ainx_.js && echo '#!/usr/bin/env node' > lib/ainx.js && echo \"if (parseInt(process.versions.node.split('.')[0]) < 16) {console.error('Node version '+process.versions.node+' is not supported, please use Node.js 16 or higher.');process.exit(1);};\" >> lib/ainx.js && cat lib/ainx_.js >> lib/ainx.js && rm lib/ainx_.js",
     "install:dev": "bun run bundle && npm i -g . --install-links"
   },
   "bin": {
