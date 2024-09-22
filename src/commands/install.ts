@@ -225,7 +225,7 @@ export default async function install(args: Args, skipRoutes: boolean = false) {
 			await fs.promises.mkdir(`.blueprint/extensions/${data.data.id}/controllers`, { recursive: true })
 			await fs.promises.cp(path.join('/tmp/ainx/addon', conf.requests.controllers), `.blueprint/extensions/${data.data.id}/controllers`, { recursive: true })
 
-			await fs.promises.mkdir(path.join('app/BlueprintFramework/Extensions', data.data.id), { recursive: true })
+			await fs.promises.mkdir('app/BlueprintFramework/Extensions', { recursive: true })
 			await fs.promises.symlink(path.join('.blueprint/extensions', data.data.id, 'controllers'), path.join('app/BlueprintFramework/Extensions', data.data.id))
 
 			await blueprint.recursivePlaceholders(conf, `app/BlueprintFramework/Extensions/${data.data.id}`)
