@@ -4,26 +4,26 @@ import enquirer from "enquirer"
 
 class Log {
 	public data = ''
-	public originalStdout = process.stdout.write
-	public originalStderr = process.stderr.write
+	public originalStdout = process.stdout._write
+	public originalStderr = process.stderr._write
 
 	constructor() {
 		const self = this
 
-		process.stdout.write = function (this, chunk, ...args) {
+		process.stdout._write = function (this, chunk, ...args) {
 			self.data += chunk
-			return self.originalStdout.call(this, chunk, ...args as any)
+			return self.originalStdout.call(this, chunk, ...args)
 		}
 
-		process.stderr.write = function (this, chunk, ...args) {
+		process.stderr._write = function (this, chunk, ...args) {
 			self.data += chunk
-			return self.originalStderr.call(this, chunk, ...args as any)
+			return self.originalStderr.call(this, chunk, ...args)
 		}
 	}
 
 	public async ask() {
-		process.stdout.write = this.originalStdout
-		process.stderr.write = this.originalStderr
+		process.stdout._write = this.originalStdout
+		process.stderr._write = this.originalStderr
 
 		console.log()
 
@@ -49,7 +49,7 @@ class Log {
 
 		console.log(chalk.gray('Uploading Logs ...'), chalk.bold.green('Done'))
 		console.log()
-		console.log(chalk.bold.blue(`https://pastes.dev/${data.key}`))
+		console.log(chalk.underline.blue(`https://pastes.dev/${data.key}`))
 	}
 }
 

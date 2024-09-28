@@ -47,6 +47,8 @@ export default async function install(args: Args, skipRoutes: boolean = false) {
 	const log = intercept()
 
 	if (args.generateFromBlueprint) {
+		console.log(chalk.gray('Generating ainx file from blueprint file ...'))
+
 		const file = args.file
 		args.file = file.replace('.blueprint', '.ainx')
 
@@ -63,6 +65,13 @@ export default async function install(args: Args, skipRoutes: boolean = false) {
 		const buffer = await ainxZip.toBufferPromise()
 
 		await fs.promises.writeFile(args.file, buffer)
+
+		console.log(chalk.gray('Generating ainx file from blueprint file ...'), chalk.bold.green('Done'))
+		console.log()
+		console.log(chalk.red.bold('THE GENERATED AINX FILE IS HIGHLY EXPERIMENTAL AND MAY NOT WORK PROPERLY. DO NOT'))
+		console.log(chalk.red.bold('CONTACT ADDON AUTHOR FOR SUPPORT IF YOU USE THIS FEATURE, USE AT YOUR OWN RISK!!'))
+		console.log(chalk.red.bold('PLEASE CHECK THE COMPATIBILITY SECTION:'))
+		console.log(chalk.underline.blue('https://github.com/0x7d8/ainx/?tab=readme-ov-file#blueprint-compatibility'))
 	}
 
 	try {
@@ -195,13 +204,16 @@ export default async function install(args: Args, skipRoutes: boolean = false) {
 
 			if (conf.info.flags?.includes('hasInstallScript') && fs.existsSync(`.blueprint/extensions/${data.data.id}/private/install.sh`)) {
 				const cmd = cp.spawn('bash', [`.blueprint/extensions/${data.data.id}/private/install.sh`], {
-					stdio: 'inherit',
+					detached: true,
 					cwd: process.cwd(),
 					env: {
 						...process.env,
 						...blueprint.environment(conf)
 					}
 				})
+
+				cmd.stdout?.pipe(process.stdout)
+				cmd.stderr?.pipe(process.stderr)
 
 				await new Promise((resolve) => cmd.on('close', resolve))
 			}

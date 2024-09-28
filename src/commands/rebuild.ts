@@ -27,12 +27,15 @@ export default async function rebuild(args: Args) {
 
 	try {
 		const cmd = cp.spawn('yarn', ['build:production'], {
+			detached: true,
 			env: {
 				...process.env,
 				NODE_OPTIONS: '--openssl-legacy-provider'
-			}, stdio: 'inherit',
-			cwd: process.cwd()
+			}, cwd: process.cwd()
 		})
+
+		cmd.stdout?.pipe(process.stdout)
+		cmd.stderr?.pipe(process.stderr)
 
 		await new Promise<void>((resolve, reject) => {
 			cmd.on('exit', (code) => {
@@ -44,9 +47,12 @@ export default async function rebuild(args: Args) {
 		})
 	} catch {
 		const cmd = cp.spawn('yarn', ['build:production'], {
-			stdio: 'inherit',
+			detached: true,
 			cwd: process.cwd()
 		})
+
+		cmd.stdout?.pipe(process.stdout)
+		cmd.stderr?.pipe(process.stderr)
 
 		await new Promise<void>((resolve, reject) => {
 			cmd.on('exit', (code) => {
