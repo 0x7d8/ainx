@@ -204,16 +204,13 @@ export default async function install(args: Args, skipRoutes: boolean = false) {
 
 			if (conf.info.flags?.includes('hasInstallScript') && fs.existsSync(`.blueprint/extensions/${data.data.id}/private/install.sh`)) {
 				const cmd = cp.spawn('bash', [`.blueprint/extensions/${data.data.id}/private/install.sh`], {
-					detached: true,
+					stdio: 'inherit',
 					cwd: process.cwd(),
 					env: {
 						...process.env,
 						...blueprint.environment(conf)
 					}
 				})
-
-				cmd.stdout?.pipe(process.stdout)
-				cmd.stderr?.pipe(process.stderr)
 
 				await new Promise((resolve) => cmd.on('close', resolve))
 			}
