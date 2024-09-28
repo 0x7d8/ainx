@@ -17,11 +17,12 @@ export type Args = {
 	force: boolean
 	rebuild: boolean
 	skipSteps: boolean
+	generateFromBlueprint: boolean
 }
 
 export default async function install(args: Args, skipRoutes: boolean = false) {
-	if (!args.file.endsWith('.ainx')) {
-		console.error(chalk.red('Invalid file type, file must end in'), chalk.cyan('.ainx'))
+	if (args.generateFromBlueprint ? !args.file.endsWith('.blueprint') : !args.file.endsWith('.ainx')) {
+		console.error(chalk.red('Invalid file type, file must end in'), chalk.cyan(args.generateFromBlueprint ? '.blueprint' : '.ainx'))
 		process.exit(1)
 	}
 
@@ -44,6 +45,25 @@ export default async function install(args: Args, skipRoutes: boolean = false) {
 	}
 
 	const log = intercept()
+
+	if (args.generateFromBlueprint) {
+		const file = args.file
+		args.file = file.replace('.blueprint', '.ainx')
+
+		const bpZip = new AdmZip(file)
+		const config = blueprint.config(bpZip.readAsText('conf.yml'))
+
+		const ainxZip = new AdmZip()
+		ainxZip.addLocalFile(file, undefined, 'addon.blueprint')
+		ainxZip.addFile('manifest.json', Buffer.from(JSON.stringify({
+			id: config.info.identifier,
+			installation: []
+		})))
+
+		const buffer = await ainxZip.toBufferPromise()
+
+		await fs.promises.writeFile(args.file, buffer)
+	}
 
 	try {
 		const zip = new AdmZip(args.file)

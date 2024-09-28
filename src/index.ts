@@ -39,6 +39,12 @@ yargs(hideBin(process.argv))
       type: 'boolean',
       description: 'skip ainx metadata installation steps',
       default: false
+    })
+    .option('generateFromBlueprint', {
+      alias: 'gFB',
+      type: 'boolean',
+      description: 'generate an ainx file for any blueprint addon, HIGHLY experimental, NOT recommended.',
+      default: false
     }),
   (rg) => install(rg))
   .command('remove <addon>', 'remove an addon', (yargs) => yargs
