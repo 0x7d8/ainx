@@ -18,6 +18,7 @@ export type Args = {
 	rebuild: boolean
 	skipSteps: boolean
 	generateFromBlueprint: boolean
+	disableSmoothMode: boolean
 }
 
 export default async function install(args: Args, skipRoutes: boolean = false) {
@@ -41,6 +42,7 @@ export default async function install(args: Args, skipRoutes: boolean = false) {
 	if (!fs.existsSync('yarn.lock')) {
 		console.error(chalk.red('Yarn lock file not found'))
 		console.error(chalk.red('Please navigate to the pterodactyl panel root directory before running ainx.'))
+		console.error(chalk.gray('Example:'), chalk.cyan('cd /var/www/pterodactyl'))
 		process.exit(1)
 	}
 
@@ -89,7 +91,7 @@ export default async function install(args: Args, skipRoutes: boolean = false) {
 
 		if (semver.gt(data.data.ainxRequirement, pckgVersion)) {
 			console.error(chalk.red('Ainx version requirement not met'))
-			console.log(chalk.gray('Update using:'), chalk.cyan('npm i -g ainx'))
+			console.log(chalk.gray('Update using:'), chalk.cyan('npm i -g ainx@latest'))
 			console.log(chalk.gray('Required:'), chalk.cyan(data.data.ainxRequirement))
 			console.log(chalk.gray('Current:'), chalk.cyan(pckgVersion))
 			process.exit(1)
@@ -262,18 +264,18 @@ export default async function install(args: Args, skipRoutes: boolean = false) {
 			await fs.promises.rm(`app/BlueprintFramework/Extensions/${data.data.id}`, { recursive: true, force: true })
 		}
 
-		if (conf.requests?.controllers) {
-			console.log(chalk.gray('Linking controllers'), chalk.cyan(conf.requests.controllers), chalk.gray('...'))
+		if (conf.requests?.app) {
+			console.log(chalk.gray('Linking app'), chalk.cyan(conf.requests.app), chalk.gray('...'))
 
-			await fs.promises.mkdir(`.blueprint/extensions/${data.data.id}/controllers`, { recursive: true })
-			await fs.promises.cp(path.join('/tmp/ainx/addon', conf.requests.controllers), `.blueprint/extensions/${data.data.id}/controllers`, { recursive: true })
+			await fs.promises.mkdir(`.blueprint/extensions/${data.data.id}/app`, { recursive: true })
+			await fs.promises.cp(path.join('/tmp/ainx/addon', conf.requests.app), `.blueprint/extensions/${data.data.id}/app`, { recursive: true })
 
 			await fs.promises.mkdir('app/BlueprintFramework/Extensions', { recursive: true })
-			await fs.promises.symlink(path.join(process.cwd(), '.blueprint/extensions', data.data.id, 'controllers'), path.join(process.cwd(), 'app/BlueprintFramework/Extensions', data.data.id))
+			await fs.promises.symlink(path.join(process.cwd(), '.blueprint/extensions', data.data.id, 'app'), path.join(process.cwd(), 'app/BlueprintFramework/Extensions', data.data.id))
 
 			await blueprint.recursivePlaceholders(conf, `app/BlueprintFramework/Extensions/${data.data.id}`)
 
-			console.log(chalk.gray('Linking controllers'), chalk.cyan(conf.requests.controllers), chalk.gray('...'), chalk.bold.green('Done'))
+			console.log(chalk.gray('Linking app'), chalk.cyan(conf.requests.app), chalk.gray('...'), chalk.bold.green('Done'))
 		}
 
 		if (conf.database?.migrations && !fs.existsSync(`database/migrations-${data.data.id}`)) {
@@ -433,7 +435,9 @@ export default async function install(args: Args, skipRoutes: boolean = false) {
 			console.log(chalk.gray('Running'), chalk.cyan(files), chalk.gray('migration(s) ...'), chalk.bold.green('Done'))
 		}
 
-		if (args.rebuild) await rebuild({})
+		if (args.rebuild) await rebuild({
+			disableSmoothMode: args.disableSmoothMode
+		})
 
 		await fs.promises.rm('/tmp/ainx/addon', { recursive: true })
 		try {
@@ -453,6 +457,10 @@ export default async function install(args: Args, skipRoutes: boolean = false) {
 	} catch (err: any) {
 		console.error(chalk.red(String(err?.stack ?? err)))
 		console.error(chalk.red('Invalid ainx file'))
+		console.error(chalk.red('Addon installation failed!!!'))
+		console.error(chalk.red('Please check the error message above for more information'))
+		console.error(chalk.red('You can try fixing the issue by updating ainx:'))
+		console.error(chalk.cyan('npm i -g ainx@latest'))
 
 		if (!args.force) await log.ask()
 

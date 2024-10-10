@@ -1,7 +1,12 @@
+import { time } from "@rjweb/utils"
 import chalk from "chalk"
 import cp from "child_process"
+import fs from "fs"
+import path from "path"
 
-export type Args = {}
+export type Args = {
+	disableSmoothMode: boolean
+}
 
 export default async function rebuild(args: Args) {
 	const nodeVersion = parseInt(process.version.split('.')[0].slice(1))
@@ -25,6 +30,21 @@ export default async function rebuild(args: Args) {
 	console.log(chalk.bold.red('@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@'))
 	console.log()
 
+	const tmpDir = path.join('/tmp', 'ainx', 'assets')
+	let files: string[] = []
+
+	if (!args.disableSmoothMode) {
+		if (fs.existsSync(tmpDir)) await fs.promises.rm(tmpDir, { recursive: true, force: true })
+		await fs.promises.mkdir(tmpDir, { recursive: true })
+
+		files = await fs.promises.readdir(path.join(process.cwd(), 'public', 'assets'))
+			.then((files) => files.filter((file) => file.endsWith('.js') || file.endsWith('.map')))
+
+		for (const file of files) {
+			await fs.promises.copyFile(path.join(process.cwd(), 'public', 'assets', file), path.join(tmpDir, file))
+		}
+	}
+
 	try {
 		const cmd = cp.spawn('yarn', ['build:production'], {
 			detached: true,
@@ -37,6 +57,14 @@ export default async function rebuild(args: Args) {
 		cmd.stdout?.pipe(process.stdout)
 		cmd.stderr?.pipe(process.stderr)
 
+		if (!args.disableSmoothMode) {
+			setTimeout(() => {
+				for (const file of files) {
+					fs.promises.copyFile(path.join(tmpDir, file), path.join(process.cwd(), 'public', 'assets', file))
+				}
+			}, time(2).s())
+		}
+
 		await new Promise<void>((resolve, reject) => {
 			cmd.on('exit', (code) => {
 				if (code === 0) resolve()
@@ -45,6 +73,12 @@ export default async function rebuild(args: Args) {
 
 			cmd.on('error', reject)
 		})
+
+		if (!args.disableSmoothMode) {
+			for (const file of files) {
+				await fs.promises.rm(path.join(tmpDir, file))
+			}
+		}
 	} catch {
 		const cmd = cp.spawn('yarn', ['build:production'], {
 			detached: true,
@@ -54,6 +88,14 @@ export default async function rebuild(args: Args) {
 		cmd.stdout?.pipe(process.stdout)
 		cmd.stderr?.pipe(process.stderr)
 
+		if (!args.disableSmoothMode) {
+			setTimeout(() => {
+				for (const file of files) {
+					fs.promises.copyFile(path.join(tmpDir, file), path.join(process.cwd(), 'public', 'assets', file))
+				}
+			}, time(2).s())
+		}
+
 		await new Promise<void>((resolve, reject) => {
 			cmd.on('exit', (code) => {
 				if (code === 0) resolve()
@@ -62,6 +104,16 @@ export default async function rebuild(args: Args) {
 
 			cmd.on('error', reject)
 		})
+
+		if (!args.disableSmoothMode) {
+			for (const file of files) {
+				await fs.promises.rm(path.join(tmpDir, file))
+			}
+		}
+	}
+
+	if (!args.disableSmoothMode) {
+		await fs.promises.rm(tmpDir, { recursive: true, force: true })
 	}
 
 	console.log()

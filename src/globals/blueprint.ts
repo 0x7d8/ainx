@@ -1,11 +1,12 @@
 import yaml from "js-yaml"
 import { version as pckgVersion } from "../../package.json"
 import { number, system } from "@rjweb/utils"
+import { BlueprintConfig, conf } from "src/types/blueprint/conf"
 import * as fs from "fs"
 import chalk from "chalk"
 import path from "path"
 
-export type BlueprintConfig = {
+type RawBlueprintConfig = {
 	info: {
 		identifier: string
 		name: string
@@ -17,7 +18,9 @@ export type BlueprintConfig = {
 	}
 
 	requests?: {
+		views?: string
 		controllers?: string
+		app?: string
 		routers?: {
 			client?: string
 			application?: string
@@ -27,16 +30,21 @@ export type BlueprintConfig = {
 
 	admin: {
 		view: string
+		controller?: string
 		css?: string
+		wrapper?: string
 	}
 
 	dashboard?: {
 		css?: string
+		wrapper?: string
+		components?: string
 	}
 
 	data?: {
 		public?: string
 		directory?: string
+		console?: string
 	}
 
 	database?: {
@@ -45,9 +53,9 @@ export type BlueprintConfig = {
 }
 
 export function config(raw: string) {
-	const data = yaml.load(raw) as BlueprintConfig
+	const data = yaml.load(raw) as RawBlueprintConfig
 
-	return data
+	return conf.parse(data)
 }
 
 export function environment(conf: BlueprintConfig) {

@@ -16,10 +16,25 @@ export type Args = {
 	force: boolean
 	migrate: boolean
 	skipSteps: boolean
+	disableSmoothMode: boolean
 }
 
 export default async function remove(args: Args, skipRoutes: boolean = false) {
 	args.addon = args.addon.replace('.ainx', '')
+
+	const yarn = await system.execute('yarn --version', { async: true }).catch(() => null)
+	if (!yarn) {
+		console.error(chalk.red('Yarn is required to remove addons'))
+		console.error(chalk.gray('Install yarn using:'), chalk.cyan('npm i -g yarn'))
+		process.exit(1)
+	}
+
+	if (!fs.existsSync('yarn.lock')) {
+		console.error(chalk.red('Yarn lock file not found'))
+		console.error(chalk.red('Please navigate to the pterodactyl panel root directory before running ainx.'))
+		console.error(chalk.gray('Example:'), chalk.cyan('cd /var/www/pterodactyl'))
+		process.exit(1)
+	}
 
 	if (!fs.existsSync(`.blueprint/extensions/${args.addon}`)) {
 		console.error(chalk.red('Addon is not installed'))
@@ -138,12 +153,12 @@ export default async function remove(args: Args, skipRoutes: boolean = false) {
 			console.log(chalk.gray('Removing base router'), chalk.cyan(`routes/base-${data.data.id}.php`), chalk.gray('...'), chalk.bold.green('Done'))
 		}
 
-		if (conf.requests?.controllers) {
-			console.log(chalk.gray('Removing controllers'), chalk.cyan(`app/BlueprintFramework/Extensions/${data.data.id}`), chalk.gray('...'))
+		if (conf.requests?.app) {
+			console.log(chalk.gray('Removing app'), chalk.cyan(`app/BlueprintFramework/Extensions/${data.data.id}`), chalk.gray('...'))
 
 			await fs.promises.rm(`app/BlueprintFramework/Extensions/${data.data.id}`, { recursive: true }).catch(() => null)
 
-			console.log(chalk.gray('Removing controllers'), chalk.cyan(`app/BlueprintFramework/Extensions/${data.data.id}`), chalk.gray('...'), chalk.bold.green('Done'))
+			console.log(chalk.gray('Removing app'), chalk.cyan(`app/BlueprintFramework/Extensions/${data.data.id}`), chalk.gray('...'), chalk.bold.green('Done'))
 		}
 
 		if (conf.database?.migrations && fs.existsSync(`database/migrations-${data.data.id}`) && args.migrate) {
@@ -261,7 +276,9 @@ export default async function remove(args: Args, skipRoutes: boolean = false) {
 		}
 
 		if (args.rebuild) {
-			await rebuild({})
+			await rebuild({
+				disableSmoothMode: args.disableSmoothMode
+			})
 		}
 
 		await fs.promises.rm('/tmp/ainx/addon', { recursive: true })

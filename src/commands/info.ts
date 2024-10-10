@@ -9,7 +9,7 @@ export type Args = {}
 
 export default async function info(args: Args) {
 	if (!fs.existsSync('.env')) {
-		console.error(chalk.red('No Pterodactyl Panel'), chalk.cyan('.env'), chalk.red('file found'))
+		console.error(chalk.red('No Pterodactyl Panel'), chalk.cyan('.env'), chalk.red('file found!'))
 		process.exit(1)
 	}
 
@@ -22,16 +22,23 @@ export default async function info(args: Args) {
 
 	const env = await filesystem.env('.env')
 
-	const yarnVersion = cp.execSync('yarn --version').toString().trim()
+	const yarnVersion = cp.execSync('yarn --version').toString().trim(),
+		seperator = '       '
+
+	const logo = Object.freeze([
+		chalk.yellow('██  ██ '),
+		chalk.yellow('  ██   '),
+		chalk.yellow('██     ')
+	])
 
 	console.log()
-	console.log(chalk.gray('Version:'), chalk.cyan(pckgVersion))
-	console.log(chalk.gray('Folder:'), chalk.cyan(process.cwd()))
-	if (env.APP_URL) console.log(chalk.gray('URL:'), chalk.cyan(env.APP_URL))
-	if (env.APP_LOCALE) console.log(chalk.gray('Locale:'), chalk.cyan(env.APP_LOCALE))
-	if (env.APP_TIMEZONE) console.log(chalk.gray('Timezone:'), chalk.cyan(env.APP_TIMEZONE))
-	console.log(chalk.gray('Addons:'), chalk.cyan(addons.length))
-	if (env.PTERODACTYL_TELEMETRY_ENABLED) console.log(chalk.gray('Telemetry:'), chalk.cyan(env.PTERODACTYL_TELEMETRY_ENABLED))
-	console.log(chalk.gray('Node:'), chalk.cyan(process.version))
-	console.log(chalk.gray('Yarn:'), chalk.cyan(yarnVersion))
+	console.log(logo[0], chalk.gray('Version:  '), chalk.cyan(`ainx@${pckgVersion}`))
+	console.log(logo[1], chalk.gray('Folder:   '), chalk.cyan(process.cwd()))
+	if (env.APP_URL) console.log(logo[2], chalk.gray('URL:      '), chalk.cyan(env.APP_URL))
+	if (env.APP_LOCALE) console.log(seperator, chalk.gray('Locale:   '), chalk.cyan(env.APP_LOCALE))
+	if (env.APP_TIMEZONE) console.log(seperator, chalk.gray('Timezone: '), chalk.cyan(env.APP_TIMEZONE))
+	console.log(seperator, chalk.gray('Addons:   '), chalk.cyan(addons.length))
+	if (env.PTERODACTYL_TELEMETRY_ENABLED) console.log(seperator, chalk.gray('Telemetry:'), chalk.cyan(env.PTERODACTYL_TELEMETRY_ENABLED))
+	console.log(seperator, chalk.gray('Node:     '), chalk.cyan(process.version))
+	console.log(seperator, chalk.gray('Yarn:     '), chalk.cyan(yarnVersion))
 }

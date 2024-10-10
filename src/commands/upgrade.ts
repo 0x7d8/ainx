@@ -9,6 +9,7 @@ export type Args = {
 	file: string
 	skipSteps: boolean
 	rebuild: boolean
+	disableSmoothMode: boolean
 }
 
 export default async function upgrade(args: Args) {
@@ -45,14 +46,17 @@ export default async function upgrade(args: Args) {
 		force: true,
 		migrate: false,
 		rebuild: false,
-		skipSteps: args.skipSteps
+		skipSteps: args.skipSteps,
+		disableSmoothMode: args.disableSmoothMode
 	}, true)
 
 	await install({
 		file: args.file,
 		force: true,
 		rebuild: args.rebuild,
-		skipSteps: args.skipSteps
+		skipSteps: args.skipSteps,
+		generateFromBlueprint: false,
+		disableSmoothMode: args.disableSmoothMode
 	}, true)
 
 	console.log(chalk.gray('Upgrading ...'), chalk.bold.green('Done'))

@@ -46,6 +46,12 @@ yargs(hideBin(process.argv))
       description: 'generate an ainx file for any blueprint addon, HIGHLY experimental, NOT recommended.',
       default: false,
       hidden: true
+    })
+    .option('disableSmoothMode', {
+      alias: 'dSM',
+      type: 'boolean',
+      description: 'disable smooth build mode, try this if you have issues with rebuilding',
+      default: false
     }),
   (rg) => install(rg))
   .command('remove <addon>', 'remove an addon', (yargs) => yargs
@@ -77,6 +83,12 @@ yargs(hideBin(process.argv))
       type: 'boolean',
       description: 'skip ainx metadata removal steps',
       default: false
+    })
+    .option('disableSmoothMode', {
+      alias: 'dSM',
+      type: 'boolean',
+      description: 'disable smooth build mode, try this if you have issues with rebuilding',
+      default: false
     }),
   (rg) => remove(rg))
   .command('upgrade <file>', 'upgrade an addon', (yargs) => yargs
@@ -96,6 +108,12 @@ yargs(hideBin(process.argv))
       type: 'boolean',
       description: 'rebuild panel ui after upgrade',
       default: true
+    })
+    .option('disableSmoothMode', {
+      alias: 'dSM',
+      type: 'boolean',
+      description: 'disable smooth build mode, try this if you have issues with rebuilding',
+      default: false
     }),
   (rg) => upgrade(rg))
   .command('bundle', 'bundle an addon', (yargs) => yargs
@@ -106,7 +124,13 @@ yargs(hideBin(process.argv))
       default: false
     }),
   (rg) => bundle(rg))
-  .command('rebuild', 'rebuild panel ui', (yargs) => yargs,
+  .command('rebuild', 'rebuild panel ui', (yargs) => yargs
+    .option('disableSmoothMode', {
+      alias: 'dSM',
+      type: 'boolean',
+      description: 'disable smooth build mode, try this if you have issues with rebuilding',
+      default: false
+    }),
   (rg) => rebuild(rg))
   .command('installed', 'list installed addons', (yargs) => yargs,
   (rg) => installed(rg))
