@@ -13,7 +13,7 @@ export const conf = z.object({
 		name: z.string(),
 		version: z.string(),
 		target: z.string(),
-		flags: z.string().transform((s) => flags.parse(s.split(',').map((s) => s.trim()).filter((s) => flags.safeParse(s).success))).optional(),
+		flags: z.string().transform((s) => flags.parse(s.split(',').map((s) => s.trim()).filter((s) => flags.safeParse([s]).success))).optional(),
 		author: z.string().optional(),
 		website: z.string().optional()
 	}),
