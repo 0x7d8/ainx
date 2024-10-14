@@ -12,6 +12,10 @@ import semver from "semver"
 import * as blueprint from "src/globals/blueprint"
 import { intercept } from "src/globals/log"
 
+import ExtensionController from "src/compat/app/Http/Controllers/Admin/ExtensionController.php"
+import BladeIndex from "src/compat/resources/views/admin/extensions/index.blade.php"
+import Admin from "src/compat/routes/admin.php"
+
 export type Args = {
 	file: string
 	force: boolean
@@ -155,6 +159,49 @@ export default async function install(args: Args, skipRoutes: boolean = false) {
 			await fs.promises.rm(`public/extensions/${data.data.id}`, { recursive: true, force: true })
 		}
 
+		if (conf.admin.controller) {
+			console.log(chalk.gray('Adding admin controller'), chalk.cyan(conf.admin.controller), chalk.gray('...'))
+
+			await fs.promises.mkdir(`app/Http/Controllers/Admin/Extensions/${data.data.id}`, { recursive: true })
+			const content = await fs.promises.readFile(path.join('/tmp/ainx/addon', conf.admin.controller), 'utf-8')
+
+			await fs.promises.writeFile(`app/Http/Controllers/Admin/Extensions/${data.data.id}/${data.data.id}ExtensionController.php`, blueprint.placeholders(conf, content))
+
+			console.log(chalk.gray('Adding admin controller'), chalk.cyan(conf.admin.controller), chalk.gray('...'), chalk.bold.green('Done'))
+		} else {
+			console.log(chalk.gray('Adding default admin controller'), chalk.cyan(conf.admin.controller), chalk.gray('...'))
+
+			await fs.promises.mkdir(`app/Http/Controllers/Admin/Extensions/${data.data.id}`, { recursive: true })
+
+			await fs.promises.writeFile(`app/Http/Controllers/Admin/Extensions/${data.data.id}/${data.data.id}ExtensionController.php`, ExtensionController.replaceAll('__identifier__', data.data.id))
+
+			console.log(chalk.gray('Adding default admin controller'), chalk.cyan(conf.admin.controller), chalk.gray('...'), chalk.bold.green('Done'))
+		}
+
+		{
+			console.log(chalk.gray('Adding admin view'), chalk.cyan(conf.admin.view), chalk.gray('...'))
+
+			await fs.promises.mkdir(`resources/views/admin/extensions/${data.data.id}`, { recursive: true })
+			const content = await fs.promises.readFile(path.join('/tmp/ainx/addon', conf.admin.view), 'utf-8')
+
+			let icon = ''
+			if (conf.info.icon) {
+				await fs.promises.mkdir(`public/assets/extensions/${data.data.id}`, { recursive: true })
+				await fs.promises.cp(path.join('/tmp/ainx/addon', conf.info.icon), `public/assets/extensions/${data.data.id}/${conf.info.icon}`)
+
+				icon = `/assets/extensions/${data.data.id}/${conf.info.icon}`
+			} else {
+				icon = 'https://raw.githubusercontent.com/BlueprintFramework/framework/refs/heads/main/blueprint/assets/Extensions/Defaults/1.jpg'
+			}
+
+			await fs.promises.writeFile(
+				`resources/views/admin/extensions/${data.data.id}/index.blade.php`,
+				blueprint.placeholders(conf, BladeIndex.replace('__description__', conf.info.description).replace('__icon__', icon).replace('__content__', content))
+			)
+
+			console.log(chalk.gray('Adding admin view'), chalk.cyan(conf.admin.view), chalk.gray('...'), chalk.bold.green('Done'))
+		}
+
 		if (conf.data?.public) {
 			console.log(chalk.gray('Linking public files'), chalk.cyan(conf.data.public), chalk.gray('...'))
 
@@ -196,6 +243,34 @@ export default async function install(args: Args, skipRoutes: boolean = false) {
 			console.log(chalk.gray('Applying dashboard css'), chalk.cyan(conf.dashboard.css), chalk.gray('...'), chalk.bold.green('Done'))
 		}
 
+		if (conf.admin.wrapper) {
+			console.log(chalk.gray('Applying admin wrapper'), chalk.cyan(conf.admin.wrapper), chalk.gray('...'))
+
+			await fs.promises.mkdir(`.blueprint/extensions/${data.data.id}/_wrappers`, { recursive: true })
+			const content = await fs.promises.readFile(path.join('/tmp/ainx/addon', conf.admin.wrapper), 'utf-8')
+
+			await fs.promises.writeFile(`.blueprint/extensions/${data.data.id}/_wrappers/admin.blade.php`, blueprint.placeholders(conf, content))
+
+			await fs.promises.mkdir('resources/views/blueprint/admin/wrappers', { recursive: true })
+			await fs.promises.symlink(path.join(process.cwd(), '.blueprint/extensions', data.data.id, '_wrappers', 'admin.blade.php'), path.join(process.cwd(), 'resources/views/blueprint/admin/wrappers', `${data.data.id}.blade.php`))
+
+			console.log(chalk.gray('Applying admin wrapper'), chalk.cyan(conf.admin.wrapper), chalk.gray('...'), chalk.bold.green('Done'))
+		}
+
+		if (conf.dashboard?.wrapper) {
+			console.log(chalk.gray('Applying dashboard wrapper'), chalk.cyan(conf.dashboard.wrapper), chalk.gray('...'))
+
+			await fs.promises.mkdir(`.blueprint/extensions/${data.data.id}/_wrappers`, { recursive: true })
+			const content = await fs.promises.readFile(path.join('/tmp/ainx/addon', conf.dashboard.wrapper), 'utf-8')
+
+			await fs.promises.writeFile(`.blueprint/extensions/${data.data.id}/_wrappers/dashboard.blade.php`, blueprint.placeholders(conf, content))
+
+			await fs.promises.mkdir('resources/views/blueprint/dashboard/wrappers', { recursive: true })
+			await fs.promises.symlink(path.join(process.cwd(), '.blueprint/extensions', data.data.id, '_wrappers', 'dashboard.blade.php'), path.join(process.cwd(), 'resources/views/blueprint/dashboard/wrappers', `${data.data.id}.blade.php`))
+
+			console.log(chalk.gray('Applying dashboard wrapper'), chalk.cyan(conf.dashboard.wrapper), chalk.gray('...'), chalk.bold.green('Done'))
+		}
+
 		if (conf.data?.directory) {
 			console.log(chalk.gray('Copying private files'), chalk.cyan(conf.data.directory), chalk.gray('...'))
 
@@ -218,6 +293,16 @@ export default async function install(args: Args, skipRoutes: boolean = false) {
 			}
 
 			console.log(chalk.gray('Copying private files'), chalk.cyan(conf.data.directory), chalk.gray('...'), chalk.bold.green('Done'))
+		}
+
+		{
+			console.log(chalk.gray('Adding admin router'), chalk.cyan(data.data.id), chalk.gray('...'))
+
+			await fs.promises.appendFile('routes/admin.php', `\ninclude 'admin-${data.data.id}.php';`)
+
+			await fs.promises.writeFile(`routes/admin-${data.data.id}.php`, Admin.replaceAll('__identifier__', data.data.id))
+
+			console.log(chalk.gray('Adding admin router'), chalk.cyan(data.data.id), chalk.gray('...'), chalk.bold.green('Done'))
 		}
 
 		if (conf.requests?.routers?.client && !fs.existsSync(`routes/client-${data.data.id}.php`)) {
@@ -276,6 +361,20 @@ export default async function install(args: Args, skipRoutes: boolean = false) {
 			await blueprint.recursivePlaceholders(conf, `app/BlueprintFramework/Extensions/${data.data.id}`)
 
 			console.log(chalk.gray('Linking app'), chalk.cyan(conf.requests.app), chalk.gray('...'), chalk.bold.green('Done'))
+		}
+
+		if (conf.requests?.views) {
+			console.log(chalk.gray('Linking views'), chalk.cyan(conf.requests.views), chalk.gray('...'))
+
+			await fs.promises.mkdir(`.blueprint/extensions/${data.data.id}/_views`, { recursive: true })
+			await fs.promises.cp(path.join('/tmp/ainx/addon', conf.requests.views), `.blueprint/extensions/${data.data.id}/_views`, { recursive: true })
+
+			await fs.promises.mkdir('resources/views/blueprint/extensions', { recursive: true })
+			await fs.promises.symlink(path.join(process.cwd(), '.blueprint/extensions', data.data.id, '_views'), path.join(process.cwd(), 'resources/views/blueprint/extensions', data.data.id))
+
+			await blueprint.recursivePlaceholders(conf, `resources/views/blueprint/extensions/${data.data.id}`)
+
+			console.log(chalk.gray('Linking views'), chalk.cyan(conf.requests.views), chalk.gray('...'), chalk.bold.green('Done'))
 		}
 
 		if (conf.database?.migrations && !fs.existsSync(`database/migrations-${data.data.id}`)) {

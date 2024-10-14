@@ -10,7 +10,9 @@ type RawBlueprintConfig = {
 	info: {
 		identifier: string
 		name: string
+		description: string
 		version: string
+		icon?: string
 		target: string
 		flags?: string
 		author?: string
@@ -199,6 +201,12 @@ export async function updateBlueprintCache() {
 	console.log(chalk.gray('Updating Blueprint Cache ...'), chalk.bold.green('Done'))
 }
 
+import BlueprintAdminTemplateView from "src/compat/resources/views/blueprint/admin/template.blade.php"
+import BlueprintAdminAdminView from "src/compat/resources/views/blueprint/admin/admin.blade.php"
+import BlueprintDashboardDashboardView from "src/compat/resources/views/blueprint/dashboard/dashboard.blade.php"
+
+import AssetsBlueprintStyleCss from "src/compat/public/assets/blueprint.style.css"
+
 import BlueprintAdminLibrary from "src/compat/app/BlueprintFramework/Libraries/ExtensionLibrary/Admin/BlueprintAdminLibrary.php"
 import BlueprintClientLibrary from "src/compat/app/BlueprintFramework/Libraries/ExtensionLibrary/Client/BlueprintClientLibrary.php"
 import BlueprintConsoleLibrary from "src/compat/app/BlueprintFramework/Libraries/ExtensionLibrary/Console/BlueprintConsoleLibrary.php"
@@ -211,6 +219,12 @@ export async function insertCompatFiles() {
 	console.log(chalk.gray('Inserting Compatibility Files ...'))
 
 	const paths: Record<string, string> = {
+		'resources/views/blueprint/admin/template.blade.php': BlueprintAdminTemplateView,
+		'resources/views/blueprint/admin/admin.blade.php': BlueprintAdminAdminView,
+		'resources/views/blueprint/dashboard/dashboard.blade.php': BlueprintDashboardDashboardView,
+
+		'public/assets/blueprint.style.css': AssetsBlueprintStyleCss,
+
 		'app/BlueprintFramework/Libraries/ExtensionLibrary/Admin/BlueprintAdminLibrary.php': BlueprintAdminLibrary,
 		'app/BlueprintFramework/Libraries/ExtensionLibrary/Client/BlueprintClientLibrary.php': BlueprintClientLibrary,
 		'app/BlueprintFramework/Libraries/ExtensionLibrary/Console/BlueprintConsoleLibrary.php': BlueprintConsoleLibrary,
@@ -229,6 +243,50 @@ export async function insertCompatFiles() {
 		if (!fs.existsSync(dir)) await fs.promises.mkdir(dir, { recursive: true })
 
 		await fs.promises.writeFile(path, content)
+	}
+
+	{
+		const header = '@include(\'blueprint.admin.admin\')\n@yield(\'blueprint.lib\')\n'
+
+		const adminLayout = await fs.promises.readFile('resources/views/layouts/admin.blade.php', 'utf-8'),
+			adminLayoutLines = adminLayout.split('\n')
+
+		if (!adminLayout.includes(header)) {
+			adminLayoutLines.splice(1, 0, header)
+
+			if (!adminLayoutLines.includes('@yield(\'blueprint.import\')')) {
+				const headIndex = adminLayoutLines.findIndex((line) => line.includes('</head>'))
+
+				adminLayoutLines.splice(headIndex, 0, '        @yield(\'blueprint.import\')')
+			}
+
+			if (!adminLayout.includes('@yield(\'blueprint.notifications\')\n@yield(\'blueprint.wrappers\')')) {
+				const bodyIndex = adminLayoutLines.findIndex((line) => line.includes('</body>'))
+
+				adminLayoutLines.splice(bodyIndex, 0, '        @yield(\'blueprint.notifications\')\n        @yield(\'blueprint.wrappers\')')
+			}
+
+			await fs.promises.writeFile('resources/views/layouts/admin.blade.php', adminLayoutLines.join('\n'))
+		}
+	}
+
+	{
+		const header = '@include("blueprint.dashboard.dashboard")\n@yield("blueprint.lib")\n'
+
+		const dashboardLayout = await fs.promises.readFile('resources/views/templates/wrapper.blade.php', 'utf-8'),
+			dashboardLayoutLines = dashboardLayout.split('\n')
+
+		if (!dashboardLayout.includes(header)) {
+			dashboardLayoutLines.splice(1, 0, header)
+
+			if (!dashboardLayoutLines.includes('@yield(\'blueprint.wrappers\')')) {
+				const headIndex = dashboardLayoutLines.findIndex((line) => line.includes('@yield(\'below-container\')'))
+
+				dashboardLayoutLines.splice(headIndex + 1, 0, '            @yield(\'blueprint.wrappers\')')
+			}
+
+			await fs.promises.writeFile('resources/views/templates/wrapper.blade.php', dashboardLayoutLines.join('\n'))
+		}
 	}
 
 	console.log(chalk.gray('Inserting Compatibility Files ...'), chalk.bold.green('Done'))

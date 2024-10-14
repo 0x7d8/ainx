@@ -43,12 +43,12 @@ ainx
   [x] hasRemoveScript
 [x] $blueprint
 [ ] Artisan Console
-[ ] Admin
-  [ ] Views
+[x] Admin
+  [x] Views
   [x] CSS
-  [ ] Wrappers
+  [x] Wrappers
 [ ] Dashboard
-  [ ] Wrappers
+  [x] Wrappers
   [x] CSS
   [ ] Components
 ```

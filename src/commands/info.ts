@@ -39,6 +39,6 @@ export default async function info(args: Args) {
 	if (env.APP_TIMEZONE) console.log(seperator, chalk.gray('Timezone: '), chalk.cyan(env.APP_TIMEZONE))
 	console.log(seperator, chalk.gray('Addons:   '), chalk.cyan(addons.length))
 	if (env.PTERODACTYL_TELEMETRY_ENABLED) console.log(seperator, chalk.gray('Telemetry:'), chalk.cyan(env.PTERODACTYL_TELEMETRY_ENABLED))
-	console.log(seperator, chalk.gray('Node:     '), chalk.cyan(process.version))
+	console.log(seperator, chalk.gray('Node:     '), chalk.cyan(process.version.slice(1)))
 	console.log(seperator, chalk.gray('Yarn:     '), chalk.cyan(yarnVersion))
 }
