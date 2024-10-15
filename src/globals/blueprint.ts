@@ -215,6 +215,19 @@ import ScriptLibraryGrabEnv from "src/compat/scripts/libraries/grabenv.sh"
 import ScriptLibraryLogFormat from "src/compat/scripts/libraries/logFormat.sh"
 import ScriptLibraryParseYaml from "src/compat/scripts/libraries/parse_yaml.sh"
 
+const ainxAddonsRoutes = `
+                        <li class="header">AINX ADDONS</li>
+                        @foreach (File::allFiles(base_path('resources/views/admin/extensions')) as $partial)
+                            @if ($partial->getExtension() == 'php')
+                                <li class="{{ ! starts_with(Route::currentRouteName(), 'admin.extensions.'.basename(dirname(strstr($partial->getPathname(), "extensions/"))).'.index') ?: 'active' }}">
+                                    <a href="{{ route('admin.extensions.'.basename(dirname(strstr($partial->getPathname(), "extensions/"))).'.index') }}">
+                                        <i class="fa fa-puzzle-piece"></i> <span>{{ basename(dirname(strstr($partial->getPathname(), "extensions/"))) }}</span>
+                                    </a>
+                                </li>
+                            @endif
+                        @endforeach
+`.split('\n').slice(1, -1).join('\n')
+
 export async function insertCompatFiles() {
 	console.log(chalk.gray('Inserting Compatibility Files ...'))
 
@@ -286,6 +299,21 @@ export async function insertCompatFiles() {
 			}
 
 			await fs.promises.writeFile('resources/views/templates/wrapper.blade.php', dashboardLayoutLines.join('\n'))
+		}
+	}
+
+	{
+		const adminLayout = await fs.promises.readFile('resources/views/layouts/admin.blade.php', 'utf-8')
+
+		if (!adminLayout.includes('AINX ADDONS')) {
+			const adminLayoutLines = adminLayout.split('\n'),
+				index = adminLayoutLines.findIndex((line) => line.includes('admin.nests'))
+
+			if (index !== -1) {
+				adminLayoutLines.splice(index + 4, 0, ainxAddonsRoutes)
+			}
+
+			await fs.promises.writeFile('resources/views/layouts/admin.blade.php', adminLayoutLines.join('\n'))
 		}
 	}
 
