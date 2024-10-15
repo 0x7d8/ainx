@@ -250,6 +250,9 @@ export async function insertCompatFiles() {
 		'.blueprint/lib/parse_yaml.sh': ScriptLibraryParseYaml
 	}
 
+	await fs.promises.mkdir('resources/views/blueprint/admin/wrappers', { recursive: true }).catch(() => null)
+	await fs.promises.mkdir('resources/views/blueprint/dashboard/wrappers', { recursive: true }).catch(() => null)
+
 	for (const [ path, content ] of Object.entries(paths)) {
 		const dir = path.split('/').slice(0, -1).join('/')
 
