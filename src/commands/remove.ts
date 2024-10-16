@@ -1,8 +1,6 @@
 import chalk from "chalk"
 import fs from "fs"
 import enquirer from "enquirer"
-import AdmZip from "adm-zip"
-import { manifest } from "src/types/manifest"
 import { filesystem, system } from "@rjweb/utils"
 import cp from "child_process"
 import rebuild from "src/commands/rebuild"
@@ -12,7 +10,7 @@ import { intercept } from "src/globals/log"
 import * as ainx from "src/globals/ainx"
 
 export type Args = {
-	addon: string
+	addons: string[]
 	rebuild: boolean
 	force: boolean
 	migrate: boolean
@@ -21,7 +19,37 @@ export type Args = {
 }
 
 export default async function remove(args: Args, skipRoutes: boolean = false) {
-	args.addon = args.addon.replace('.ainx', '')
+	if (!args.addons.length) {
+		console.error(chalk.red('No addons provided'))
+		process.exit(1)
+	}
+
+	if (args.addons.length !== 1) {
+		const { confirm } = await enquirer.prompt<{ confirm: boolean }>({
+			type: 'confirm',
+			name: 'confirm',
+			message: `Remove ${args.addons.length} addons?`
+		})
+
+		if (!confirm) {
+			console.log(chalk.yellow('Cancelled'))
+			process.exit(0)
+		}
+
+		console.log(chalk.gray('Removing'), chalk.cyan(args.addons.length), chalk.gray('addons ...'))
+
+		for (const addon of args.addons) {
+			await remove({ ...args, addons: [addon], rebuild: false })
+		}
+
+		await rebuild({ disableSmoothMode: args.disableSmoothMode })
+
+		console.log(chalk.gray('Removing'), chalk.cyan(args.addons.length), chalk.gray('addons ...'), chalk.bold.green('Done'))
+
+		return
+	}
+
+	let addon = args.addons[0].replace('.ainx', '')
 
 	const yarn = await system.execute('yarn --version', { async: true }).catch(() => null)
 	if (!yarn) {
@@ -37,7 +65,7 @@ export default async function remove(args: Args, skipRoutes: boolean = false) {
 		process.exit(1)
 	}
 
-	if (!fs.existsSync(`.blueprint/extensions/${args.addon}`)) {
+	if (!fs.existsSync(`.blueprint/extensions/${addon}`)) {
 		console.error(chalk.red('Addon is not installed'))
 		process.exit(1)
 	}
@@ -45,7 +73,7 @@ export default async function remove(args: Args, skipRoutes: boolean = false) {
 	const log = intercept()
 
 	try {
-		const [data, conf, zip] = ainx.parse(`.blueprint/extensions/${args.addon}/${args.addon}.ainx`)
+		const [ data, conf, zip ] = ainx.parse(`.blueprint/extensions/${addon}/${addon}.ainx`)
 		if (!zip.test()) {
 			console.error(chalk.red('Invalid ainx file'))
 			process.exit(1)
@@ -327,9 +355,13 @@ export default async function remove(args: Args, skipRoutes: boolean = false) {
 			})
 		}
 
-		await system.execute('php artisan optimize', { async: true })
+		try {
+			system.execute('php artisan optimize')
+		}	catch { }
 
-		await fs.promises.rm(`.blueprint/extensions/${args.addon}`, { recursive: true })
+		await blueprint.updateBlueprintCache()
+
+		await fs.promises.rm(`.blueprint/extensions/${addon}`, { recursive: true })
 
 		console.log(chalk.gray('Removing Addon'), chalk.cyan(data.id), chalk.gray('...'), chalk.bold.green('Done'))
 		console.log(chalk.italic.gray(`Took ${Date.now() - start}ms`))

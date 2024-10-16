@@ -7,31 +7,64 @@ import { intercept } from "src/globals/log"
 import * as ainx from "src/globals/ainx"
 import { version as pckgVersion } from "../../package.json"
 import semver from "semver"
+import rebuild from "src/commands/rebuild"
 
 export type Args = {
-	file: string
+	files: string[]
 	skipSteps: boolean
 	rebuild: boolean
 	disableSmoothMode: boolean
 }
 
-export default async function upgrade(args: Args) {
-	if (!args.file.endsWith('.ainx')) {
+export default async function upgrade(args: Args, force: boolean = false) {
+	if (!args.files.length) {
+		console.error(chalk.red('No files provided'))
+		process.exit(1)
+	}
+
+	if (args.files.length !== 1) {
+		const { confirm } = await enquirer.prompt<{ confirm: boolean }>({
+			type: 'confirm',
+			name: 'confirm',
+			message: `Upgrade ${args.files.length} addons?`
+		})
+
+		if (!confirm) {
+			console.log(chalk.yellow('Cancelled'))
+			process.exit(0)
+		}
+
+		console.log(chalk.gray('Upgrading'), chalk.cyan(args.files.length), chalk.gray('addons ...'))
+
+		for (const file of args.files) {
+			await upgrade({ ...args, files: [file], rebuild: false }, true)
+		}
+
+		await rebuild({ disableSmoothMode: args.disableSmoothMode })
+
+		console.log(chalk.gray('Upgrading'), chalk.cyan(args.files.length), chalk.gray('addons ...'), chalk.bold.green('Done'))
+
+		return
+	}
+
+	const file = args.files[0]
+
+	if (!file.endsWith('.ainx')) {
 		console.error(chalk.red('Invalid file type, file must end in'), chalk.cyan('.ainx'))
 		process.exit(1)
 	}
 
-	if (!fs.existsSync(`.blueprint/extensions/${args.file.replace('.ainx', '')}/${args.file}`)) {
+	if (!fs.existsSync(`.blueprint/extensions/${file.replace('.ainx', '')}/${file}`)) {
 		console.error(chalk.red('Addon is not (properly) installed, install instead'))
 		process.exit(1)
 	}
 
-	if (!fs.existsSync(args.file)) {
+	if (!fs.existsSync(file)) {
 		console.error(chalk.red('File does not exist'))
 		process.exit(1)
 	}
 
-	const [ data, conf, zip ] = ainx.parse(args.file)
+	const [ data, conf, zip ] = ainx.parse(file)
 	if (!zip.test()) {
 		console.error(chalk.red('Invalid ainx file'))
 		process.exit(1)
@@ -47,11 +80,18 @@ export default async function upgrade(args: Args) {
 		process.exit(1)
 	}
 
-	const { confirm } = await enquirer.prompt<{ confirm: boolean }>({
-		type: 'confirm',
-		name: 'confirm',
-		message: `Upgrade ${conf.info.name}?`
-	})
+	if (!force) {
+		const { confirm } = await enquirer.prompt<{ confirm: boolean }>({
+			type: 'confirm',
+			name: 'confirm',
+			message: `Upgrade ${conf.info.name}?`
+		})
+
+		if (!confirm) {
+			console.log(chalk.yellow('Cancelled'))
+			process.exit(0)
+		}
+	}
 
 	const start = Date.now(),
 		log = intercept()
@@ -60,13 +100,8 @@ export default async function upgrade(args: Args) {
 	console.log(chalk.gray('Upgrading ...'))
 	console.log()
 
-	if (!confirm) {
-		console.log(chalk.yellow('Cancelled'))
-		process.exit(0)
-	}
-
 	await remove({
-		addon: args.file.replace('.ainx', ''),
+		addons: [file.replace('.ainx', '')],
 		force: true,
 		migrate: false,
 		rebuild: false,
@@ -75,7 +110,7 @@ export default async function upgrade(args: Args) {
 	}, true)
 
 	await install({
-		file: args.file,
+		files: [file],
 		force: true,
 		rebuild: args.rebuild,
 		skipSteps: args.skipSteps,
@@ -86,5 +121,5 @@ export default async function upgrade(args: Args) {
 	console.log(chalk.gray('Upgrading ...'), chalk.bold.green('Done'))
 	console.log(chalk.italic.gray(`Took ${Date.now() - start}ms`))
 
-	await log.ask()
+	if (!force) await log.ask()
 }

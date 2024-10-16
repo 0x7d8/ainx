@@ -3,7 +3,6 @@ import fs from "fs"
 import enquirer from "enquirer"
 import AdmZip from "adm-zip"
 import { version as pckgVersion } from "../../package.json"
-import { manifest } from "src/types/manifest"
 import path from "path"
 import { filesystem, number, system } from "@rjweb/utils"
 import cp from "child_process"
@@ -18,7 +17,7 @@ import BladeIndex from "src/compat/resources/views/admin/extensions/index.blade.
 import Admin from "src/compat/routes/admin.php"
 
 export type Args = {
-	file: string
+	files: string[]
 	force: boolean
 	rebuild: boolean
 	skipSteps: boolean
@@ -27,12 +26,44 @@ export type Args = {
 }
 
 export default async function install(args: Args, skipRoutes: boolean = false) {
-	if (args.generateFromBlueprint ? !args.file.endsWith('.blueprint') : !args.file.endsWith('.ainx')) {
+	if (!args.files.length) {
+		console.error(chalk.red('No files provided'))
+		process.exit(1)
+	}
+
+	if (args.files.length !== 1) {
+		const { confirm } = await enquirer.prompt<{ confirm: boolean }>({
+			type: 'confirm',
+			name: 'confirm',
+			message: `Install ${args.files.length} addons?`
+		})
+
+		if (!confirm) {
+			console.log(chalk.yellow('Cancelled'))
+			process.exit(0)
+		}
+
+		console.log(chalk.gray('Installing'), chalk.cyan(args.files.length), chalk.gray('addons ...'))
+
+		for (const file of args.files) {
+			await install({ ...args, files: [file], force: true, rebuild: false })
+		}
+
+		await rebuild({ disableSmoothMode: args.disableSmoothMode })
+
+		console.log(chalk.gray('Installing'), chalk.cyan(args.files.length), chalk.gray('addons ...'), chalk.bold.green('Done'))
+
+		return
+	}
+
+	let file = args.files[0]
+
+	if (args.generateFromBlueprint ? !file.endsWith('.blueprint') : !file.endsWith('.ainx')) {
 		console.error(chalk.red('Invalid file type, file must end in'), chalk.cyan(args.generateFromBlueprint ? '.blueprint' : '.ainx'))
 		process.exit(1)
 	}
 
-	if (!fs.existsSync(args.file)) {
+	if (!fs.existsSync(file)) {
 		console.error(chalk.red('File does not exist'))
 		process.exit(1)
 	}
@@ -56,8 +87,7 @@ export default async function install(args: Args, skipRoutes: boolean = false) {
 	if (args.generateFromBlueprint) {
 		console.log(chalk.gray('Generating ainx file from blueprint file ...'))
 
-		const file = args.file
-		args.file = file.replace('.blueprint', '.ainx')
+		file = file.replace('.blueprint', '.ainx')
 
 		const bpZip = new AdmZip(file)
 		const config = blueprint.config(bpZip.readAsText('conf.yml'))
@@ -71,7 +101,7 @@ export default async function install(args: Args, skipRoutes: boolean = false) {
 
 		const buffer = await ainxZip.toBufferPromise()
 
-		await fs.promises.writeFile(args.file, buffer)
+		await fs.promises.writeFile(file, buffer)
 
 		console.log(chalk.gray('Generating ainx file from blueprint file ...'), chalk.bold.green('Done'))
 		console.log()
@@ -82,7 +112,7 @@ export default async function install(args: Args, skipRoutes: boolean = false) {
 	}
 
 	try {
-		const [ data, conf, zip ] = ainx.parse(args.file)
+		const [ data, conf, zip ] = ainx.parse(file)
 		if (!zip.test()) {
 			console.error(chalk.red('Invalid ainx file'))
 			process.exit(1)
@@ -544,7 +574,7 @@ export default async function install(args: Args, skipRoutes: boolean = false) {
 		await blueprint.applyPermissions()
 
 		if (!fs.existsSync(`.blueprint/extensions/${data.id}`)) await fs.promises.mkdir(`.blueprint/extensions/${data.id}`, { recursive: true })
-		await fs.promises.cp(args.file, `.blueprint/extensions/${data.id}/${data.id}.ainx`)
+		await fs.promises.cp(file, `.blueprint/extensions/${data.id}/${data.id}.ainx`)
 
 		console.log(chalk.gray('Installing'), chalk.cyan(data.id), chalk.gray('...'), chalk.bold.green('Done'))
 		console.log(chalk.italic.gray(`Took ${Date.now() - start}ms`))

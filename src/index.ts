@@ -34,11 +34,12 @@ console.log()
 
 yargs(hideBin(process.argv))
   .version(pckgVersion)
-  .command('install <file>', 'install an addon', (yargs) => yargs
-    .positional('file', {
+  .command('install [files..]', 'install an addon', (yargs) => yargs
+    .positional('files', {
       demandOption: true,
       type: 'string',
-      description: 'the file to install'
+      description: 'the file to install',
+      array: true
     })
     .option('force', {
       alias: 'f',
@@ -72,11 +73,12 @@ yargs(hideBin(process.argv))
       default: false
     }),
   (rg) => install(rg))
-  .command('remove <addon>', 'remove an addon', (yargs) => yargs
-    .positional('addon', {
+  .command('remove [addons..]', 'remove an addon', (yargs) => yargs
+    .positional('addons', {
       demandOption: true,
       type: 'string',
-      description: 'the addon to remove'
+      description: 'the addon to remove',
+      array: true
     })
     .option('force', {
       alias: 'f',
@@ -109,11 +111,12 @@ yargs(hideBin(process.argv))
       default: false
     }),
   (rg) => remove(rg))
-  .command('upgrade <file>', 'upgrade an addon', (yargs) => yargs
-    .positional('file', {
+  .command('upgrade [files..]', 'upgrade an addon', (yargs) => yargs
+    .positional('files', {
       demandOption: true,
       type: 'string',
-      description: 'the file to use to upgrade'
+      description: 'the file to use to upgrade',
+      array: true
     })
     .option('skipSteps', {
       alias: 's',
