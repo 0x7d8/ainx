@@ -21,7 +21,7 @@ export function parse(file: string | Buffer): [manifest: z.infer<typeof manifest
 	return [manifest.parse(JSON.parse(manifestFile)), blueprint.config(conf), zip]
 }
 
-export function unpack(zip: AdmZip, location: string): Disposable & { path(): string } {
+export function unpack(zip: AdmZip, location: string): { path(): string } {
 	const blueprintZip = zip.getEntry('addon.blueprint')
 
 	if (blueprintZip) {
@@ -33,8 +33,6 @@ export function unpack(zip: AdmZip, location: string): Disposable & { path(): st
 	return {
 		path() {
 			return location
-		}, [Symbol.dispose]() {
-			rm(location, { recursive: true }, () => {})
 		}
 	}
 }

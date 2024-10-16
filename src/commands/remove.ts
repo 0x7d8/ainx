@@ -97,7 +97,7 @@ export default async function remove(args: Args, skipRoutes: boolean = false) {
 		console.log(chalk.gray('Removing Addon'), chalk.cyan(data.id), chalk.gray('...'))
 		console.log()
 
-		using _ = ainx.unpack(zip, '/tmp/ainx/addon')
+		ainx.unpack(zip, '/tmp/ainx/addon')
 
 		console.log(chalk.gray('Addon Name:'), chalk.cyan(conf.info.name))
 		console.log(chalk.gray('Addon Version:'), chalk.cyan(conf.info.version))
@@ -374,5 +374,7 @@ export default async function remove(args: Args, skipRoutes: boolean = false) {
 		if (!args.force) await log.ask()
 
 		process.exit(1)
+	} finally {
+		await fs.promises.rm('/tmp/ainx/addon', { recursive: true, force: true })
 	}
 }

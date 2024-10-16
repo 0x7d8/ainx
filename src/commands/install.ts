@@ -156,7 +156,7 @@ export default async function install(args: Args, skipRoutes: boolean = false) {
 		console.log(chalk.gray('Installing'), chalk.cyan(data.id), chalk.gray('...'))
 		console.log()
 
-		using source = ainx.unpack(zip, '/tmp/ainx/addon')
+		const source = ainx.unpack(zip, '/tmp/ainx/addon')
 
 		console.log(chalk.gray('Addon Name:'), chalk.cyan(conf.info.name))
 		console.log(chalk.gray('Addon Version:'), chalk.cyan(conf.info.version))
@@ -591,5 +591,7 @@ export default async function install(args: Args, skipRoutes: boolean = false) {
 		if (!args.force) await log.ask()
 
 		process.exit(1)
+	} finally {
+		await fs.promises.rm('/tmp/ainx/addon', { recursive: true, force: true })
 	}
 }
