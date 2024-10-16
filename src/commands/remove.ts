@@ -9,6 +9,7 @@ import rebuild from "src/commands/rebuild"
 import * as blueprint from "src/globals/blueprint"
 import path from "path"
 import { intercept } from "src/globals/log"
+import * as ainx from "src/globals/ainx"
 
 export type Args = {
 	addon: string
@@ -44,14 +45,8 @@ export default async function remove(args: Args, skipRoutes: boolean = false) {
 	const log = intercept()
 
 	try {
-		const zip = new AdmZip(`.blueprint/extensions/${args.addon}/${args.addon}.ainx`)
+		const [data, conf, zip] = ainx.parse(`.blueprint/extensions/${args.addon}/${args.addon}.ainx`)
 		if (!zip.test()) {
-			console.error(chalk.red('Invalid ainx file'))
-			process.exit(1)
-		}
-
-		const data = manifest.safeParse(JSON.parse(zip.readAsText('manifest.json')))
-		if (!data.success) {
 			console.error(chalk.red('Invalid ainx file'))
 			process.exit(1)
 		}
@@ -60,7 +55,7 @@ export default async function remove(args: Args, skipRoutes: boolean = false) {
 			const { confirm } = await enquirer.prompt<{ confirm: boolean }>({
 				type: 'confirm',
 				name: 'confirm',
-				message: `Remove ${data.data.id}?`
+				message: `Remove ${conf.info.name}?`
 			})
 
 			if (!confirm) {
@@ -71,13 +66,10 @@ export default async function remove(args: Args, skipRoutes: boolean = false) {
 
 		const start = Date.now()
 
-		console.log(chalk.gray('Removing Addon'), chalk.cyan(data.data.id), chalk.gray('...'))
+		console.log(chalk.gray('Removing Addon'), chalk.cyan(data.id), chalk.gray('...'))
 		console.log()
 
-		const bpZip = new AdmZip(zip.readFile('addon.blueprint') ?? undefined)
-
-		bpZip.extractAllTo('/tmp/ainx/addon', true)
-		const conf = blueprint.config(bpZip.readAsText('conf.yml'))
+		using _ = ainx.unpack(zip, '/tmp/ainx/addon')
 
 		console.log(chalk.gray('Addon Name:'), chalk.cyan(conf.info.name))
 		console.log(chalk.gray('Addon Version:'), chalk.cyan(conf.info.version))
@@ -88,8 +80,8 @@ export default async function remove(args: Args, skipRoutes: boolean = false) {
 			console.log(chalk.gray('Removing admin view'), chalk.cyan(conf.admin.view), chalk.gray('...'))
 
 			await Promise.allSettled([
-				fs.promises.rm(`public/assets/extensions/${data.data.id}`, { recursive: true }),
-				fs.promises.rm(`resources/views/admin/extensions/${data.data.id}`, { recursive: true })
+				fs.promises.rm(`public/assets/extensions/${data.id}`, { recursive: true }),
+				fs.promises.rm(`resources/views/admin/extensions/${data.id}`, { recursive: true })
 			])
 
 			console.log(chalk.gray('Removing admin view'), chalk.cyan(conf.admin.view), chalk.gray('...'), chalk.bold.green('Done'))
@@ -98,22 +90,22 @@ export default async function remove(args: Args, skipRoutes: boolean = false) {
 		if (conf.admin.controller) {
 			console.log(chalk.gray('Removing admin controller'), chalk.cyan(conf.admin.controller), chalk.gray('...'))
 
-			await fs.promises.rm(`app/Http/Controllers/Admin/Extensions/${data.data.id}`, { recursive: true }).catch(() => null)
+			await fs.promises.rm(`app/Http/Controllers/Admin/Extensions/${data.id}`, { recursive: true }).catch(() => null)
 
 			console.log(chalk.gray('Removing admin controller'), chalk.cyan(conf.admin.controller), chalk.gray('...'), chalk.bold.green('Done'))
 		}
 
-		await fs.promises.rm(`storage/extensions/${data.data.id}`, { recursive: true }).catch(() => null)
+		await fs.promises.rm(`storage/extensions/${data.id}`, { recursive: true }).catch(() => null)
 
 		if (conf.data?.public) {
-			const publicStat = await fs.promises.stat(`public/extensions/${data.data.id}`).catch(() => null)
-			if (publicStat?.isSymbolicLink() || publicStat?.isDirectory()) await fs.promises.rm(`public/extensions/${data.data.id}`, { recursive: true })
+			const publicStat = await fs.promises.stat(`public/extensions/${data.id}`).catch(() => null)
+			if (publicStat?.isSymbolicLink() || publicStat?.isDirectory()) await fs.promises.rm(`public/extensions/${data.id}`, { recursive: true })
 		}
 
 		if (conf.admin.css) {
 			console.log(chalk.gray('Removing admin css'), chalk.cyan(conf.admin.css), chalk.gray('...'))
 
-			await filesystem.replace('resources/views/layouts/admin.blade.php', `\n    <link rel="stylesheet" href="/extensions/${data.data.id}/_assets/admin.style.css?t={{ \\Illuminate\\Support\\Facades\\DB::table('settings')->where('key', 'blueprint::cache')->first()->value }}">`, '')
+			await filesystem.replace('resources/views/layouts/admin.blade.php', `\n    <link rel="stylesheet" href="/extensions/${data.id}/_assets/admin.style.css?t={{ \\Illuminate\\Support\\Facades\\DB::table('settings')->where('key', 'blueprint::cache')->first()->value }}">`, '')
 
 			console.log(chalk.gray('Removing admin css'), chalk.cyan(conf.admin.css), chalk.gray('...'), chalk.bold.green('Done'))
 		}
@@ -121,13 +113,13 @@ export default async function remove(args: Args, skipRoutes: boolean = false) {
 		if (conf.dashboard?.css) {
 			console.log(chalk.gray('Removing dashboard css'), chalk.cyan(conf.dashboard.css), chalk.gray('...'))
 
-			await filesystem.replace('resources/views/templates/wrapper.blade.php', `\n    <link rel="stylesheet" href="/extensions/${data.data.id}/_assets/dashboard.style.css?t={{ \\Illuminate\\Support\\Facades\\DB::table('settings')->where('key', 'blueprint::cache')->first()->value }}">`, '')
+			await filesystem.replace('resources/views/templates/wrapper.blade.php', `\n    <link rel="stylesheet" href="/extensions/${data.id}/_assets/dashboard.style.css?t={{ \\Illuminate\\Support\\Facades\\DB::table('settings')->where('key', 'blueprint::cache')->first()->value }}">`, '')
 		}
 
 		if (conf.admin.wrapper) {
 			console.log(chalk.gray('Removing admin wrapper'), chalk.cyan(conf.admin.wrapper), chalk.gray('...'))
 
-			await fs.promises.rm(`resources/views/blueprint/admin/wrappers/${data.data.id}.blade.php`, { recursive: true }).catch(() => null)
+			await fs.promises.rm(`resources/views/blueprint/admin/wrappers/${data.id}.blade.php`, { recursive: true }).catch(() => null)
 
 			console.log(chalk.gray('Removing admin wrapper'), chalk.cyan(conf.admin.wrapper), chalk.gray('...'), chalk.bold.green('Done'))
 		}
@@ -135,14 +127,14 @@ export default async function remove(args: Args, skipRoutes: boolean = false) {
 		if (conf.dashboard?.wrapper) {
 			console.log(chalk.gray('Removing dashboard wrapper'), chalk.cyan(conf.dashboard.wrapper), chalk.gray('...'))
 
-			await fs.promises.rm(`resources/views/blueprint/dashboard/wrappers/${data.data.id}.blade.php`, { recursive: true }).catch(() => null)
+			await fs.promises.rm(`resources/views/blueprint/dashboard/wrappers/${data.id}.blade.php`, { recursive: true }).catch(() => null)
 
 			console.log(chalk.gray('Removing dashboard wrapper'), chalk.cyan(conf.dashboard.wrapper), chalk.gray('...'), chalk.bold.green('Done'))
 		}
 
 		if (conf.data?.directory) {
-			if (conf.info.flags?.includes('hasRemovalScript') && fs.existsSync(`.blueprint/extensions/${data.data.id}/private/remove.sh`)) {
-				const cmd = cp.spawn('bash', [`.blueprint/extensions/${data.data.id}/private/remove.sh`], {
+			if (conf.info.flags?.includes('hasRemovalScript') && fs.existsSync(`.blueprint/extensions/${data.id}/private/remove.sh`)) {
+				const cmd = cp.spawn('bash', [`.blueprint/extensions/${data.id}/private/remove.sh`], {
 					stdio: 'inherit',
 					cwd: process.cwd(),
 					env: {
@@ -156,75 +148,75 @@ export default async function remove(args: Args, skipRoutes: boolean = false) {
 		}
 
 		{
-			console.log(chalk.gray('Removing admin routes'), chalk.cyan(`routes/admin-${data.data.id}.php`), chalk.gray('...'))
+			console.log(chalk.gray('Removing admin routes'), chalk.cyan(`routes/admin-${data.id}.php`), chalk.gray('...'))
 
 			await Promise.allSettled([
-				fs.promises.rm(`routes/admin-${data.data.id}.php`),
-				filesystem.replace('routes/admin.php', `\ninclude 'admin-${data.data.id}.php';`, '')
+				fs.promises.rm(`routes/admin-${data.id}.php`),
+				filesystem.replace('routes/admin.php', `\ninclude 'admin-${data.id}.php';`, '')
 			])
 
-			console.log(chalk.gray('Removing admin routes'), chalk.cyan(`routes/admin-${data.data.id}.php`), chalk.gray('...'), chalk.bold.green('Done'))
+			console.log(chalk.gray('Removing admin routes'), chalk.cyan(`routes/admin-${data.id}.php`), chalk.gray('...'), chalk.bold.green('Done'))
 		}
 
 		if (conf.requests?.routers?.client) {
-			console.log(chalk.gray('Removing client router'), chalk.cyan(`routes/client-${data.data.id}.php`), chalk.gray('...'))
+			console.log(chalk.gray('Removing client router'), chalk.cyan(`routes/client-${data.id}.php`), chalk.gray('...'))
 
 			await Promise.allSettled([
-				fs.promises.rm(`routes/client-${data.data.id}.php`),
-				filesystem.replace('routes/api-client.php', `\ninclude 'client-${data.data.id}.php';`, '')
+				fs.promises.rm(`routes/client-${data.id}.php`),
+				filesystem.replace('routes/api-client.php', `\ninclude 'client-${data.id}.php';`, '')
 			])
 
-			console.log(chalk.gray('Removing client router'), chalk.cyan(`routes/client-${data.data.id}.php`), chalk.gray('...'), chalk.bold.green('Done'))
+			console.log(chalk.gray('Removing client router'), chalk.cyan(`routes/client-${data.id}.php`), chalk.gray('...'), chalk.bold.green('Done'))
 		}
 
 		if (conf.requests?.routers?.application) {
 			console.log(chalk.gray('Removing application router'), chalk.cyan(`routes/api-application.php`), chalk.gray('...'))
 
 			await Promise.allSettled([
-				fs.promises.rm(`routes/application-${data.data.id}.php`),
-				filesystem.replace('routes/api-application.php', `\ninclude 'application-${data.data.id}.php';`, '')
+				fs.promises.rm(`routes/application-${data.id}.php`),
+				filesystem.replace('routes/api-application.php', `\ninclude 'application-${data.id}.php';`, '')
 			])
 
 			console.log(chalk.gray('Removing application router'), chalk.cyan(`routes/api-application.php`), chalk.gray('...'), chalk.bold.green('Done'))
 		}
 
 		if (conf.requests?.routers?.web) {
-			console.log(chalk.gray('Removing base router'), chalk.cyan(`routes/base-${data.data.id}.php`), chalk.gray('...'))
+			console.log(chalk.gray('Removing base router'), chalk.cyan(`routes/base-${data.id}.php`), chalk.gray('...'))
 
 			await Promise.allSettled([
-				fs.promises.rm(`routes/base-${data.data.id}.php`),
-				filesystem.replace('routes/base.php', `\ninclude 'base-${data.data.id}.php';`, '')
+				fs.promises.rm(`routes/base-${data.id}.php`),
+				filesystem.replace('routes/base.php', `\ninclude 'base-${data.id}.php';`, '')
 			])
 
-			console.log(chalk.gray('Removing base router'), chalk.cyan(`routes/base-${data.data.id}.php`), chalk.gray('...'), chalk.bold.green('Done'))
+			console.log(chalk.gray('Removing base router'), chalk.cyan(`routes/base-${data.id}.php`), chalk.gray('...'), chalk.bold.green('Done'))
 		}
 
 		if (conf.requests?.app) {
-			console.log(chalk.gray('Removing app'), chalk.cyan(`app/BlueprintFramework/Extensions/${data.data.id}`), chalk.gray('...'))
+			console.log(chalk.gray('Removing app'), chalk.cyan(`app/BlueprintFramework/Extensions/${data.id}`), chalk.gray('...'))
 
-			await fs.promises.rm(`app/BlueprintFramework/Extensions/${data.data.id}`, { recursive: true }).catch(() => null)
+			await fs.promises.rm(`app/BlueprintFramework/Extensions/${data.id}`, { recursive: true }).catch(() => null)
 
-			console.log(chalk.gray('Removing app'), chalk.cyan(`app/BlueprintFramework/Extensions/${data.data.id}`), chalk.gray('...'), chalk.bold.green('Done'))
+			console.log(chalk.gray('Removing app'), chalk.cyan(`app/BlueprintFramework/Extensions/${data.id}`), chalk.gray('...'), chalk.bold.green('Done'))
 		}
 
 		if (conf.requests?.views) {
-			console.log(chalk.gray('Removing views'), chalk.cyan(`resources/views/${data.data.id}`), chalk.gray('...'))
+			console.log(chalk.gray('Removing views'), chalk.cyan(`resources/views/${data.id}`), chalk.gray('...'))
 
-			await fs.promises.rm(`resources/views/blueprint/extensions/${data.data.id}`, { recursive: true }).catch(() => null)
+			await fs.promises.rm(`resources/views/blueprint/extensions/${data.id}`, { recursive: true }).catch(() => null)
 
-			console.log(chalk.gray('Removing views'), chalk.cyan(`resources/views/${data.data.id}`), chalk.gray('...'), chalk.bold.green('Done'))
+			console.log(chalk.gray('Removing views'), chalk.cyan(`resources/views/${data.id}`), chalk.gray('...'), chalk.bold.green('Done'))
 		}
 
-		if (conf.database?.migrations && fs.existsSync(`database/migrations-${data.data.id}`) && args.migrate) {
-			console.log(chalk.gray('Rolling back migrations'), chalk.cyan(`database/migrations-${data.data.id}`), chalk.gray('...'))
+		if (conf.database?.migrations && fs.existsSync(`database/migrations-${data.id}`) && args.migrate) {
+			console.log(chalk.gray('Rolling back migrations'), chalk.cyan(`database/migrations-${data.id}`), chalk.gray('...'))
 
-			await system.execute(`php artisan migrate:rollback --force --path=database/migrations-${data.data.id}`, { async: true })
-			await fs.promises.rm(`database/migrations-${data.data.id}`, { recursive: true })
+			await system.execute(`php artisan migrate:rollback --force --path=database/migrations-${data.id}`, { async: true })
+			await fs.promises.rm(`database/migrations-${data.id}`, { recursive: true })
 
-			console.log(chalk.gray('Rolling back migrations'), chalk.cyan(`database/migrations-${data.data.id}`), chalk.gray('...'), chalk.bold.green('Done'))
+			console.log(chalk.gray('Rolling back migrations'), chalk.cyan(`database/migrations-${data.id}`), chalk.gray('...'), chalk.bold.green('Done'))
 		}
 
-		if (!args.skipSteps) for (const step of data.data.installation.filter((step) => (step.type as any) === 'dashboard-route').concat(data.data.removal ?? [])) {
+		if (!args.skipSteps) for (const step of data.installation.filter((step) => (step.type as any) === 'dashboard-route').concat(data.removal ?? [])) {
 			switch (step.type) {
 				case "copy": {
 					console.log(chalk.gray('Copying'), chalk.cyan(step.source), chalk.gray('to'), chalk.cyan(step.destination), chalk.gray('...'))
@@ -335,12 +327,11 @@ export default async function remove(args: Args, skipRoutes: boolean = false) {
 			})
 		}
 
-		await fs.promises.rm('/tmp/ainx/addon', { recursive: true })
 		await system.execute('php artisan optimize', { async: true })
 
 		await fs.promises.rm(`.blueprint/extensions/${args.addon}`, { recursive: true })
 
-		console.log(chalk.gray('Removing Addon'), chalk.cyan(data.data.id), chalk.gray('...'), chalk.bold.green('Done'))
+		console.log(chalk.gray('Removing Addon'), chalk.cyan(data.id), chalk.gray('...'), chalk.bold.green('Done'))
 		console.log(chalk.italic.gray(`Took ${Date.now() - start}ms`))
 
 		if (!args.force) await log.ask()

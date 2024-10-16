@@ -3,6 +3,7 @@ import fs from "fs"
 import AdmZip from "adm-zip"
 import { manifest } from "src/types/manifest"
 import * as blueprint from "src/globals/blueprint"
+import semver from "semver"
 
 export type Args = {
 	ainx: boolean
@@ -42,8 +43,18 @@ export default async function bundle(args: Args) {
 	const zip = new AdmZip(),
 		ainx = new AdmZip()
 
-	ainx.addFile('manifest.json', Buffer.from(JSON.stringify(JSON.parse(await fs.promises.readFile('manifest.json', 'utf-8')))))
-	ainx.addLocalFile(blueprintZip, '', 'addon.blueprint')
+	const rawManifest = JSON.parse(await fs.promises.readFile('manifest.json', 'utf-8'))
+
+	if (!rawManifest.ainxRequirement || semver.gt('1.8.3', rawManifest.ainxRequirement)) {
+		rawManifest.ainxRequirement = '1.8.3'
+	}
+
+	ainx.addFile('manifest.json', Buffer.from(JSON.stringify(rawManifest)))
+	ainx.addFile('source.txt', Buffer.from('https://github.com/0x7d8/ainx'))
+
+	for (const file of bpZip.getEntries()) {
+		ainx.addFile(`addon/${file.entryName}`, file.getData())
+	}
 
 	if (!args.ainx) {
 		zip.addFile(`${data.data.id}.ainx`, await ainx.toBufferPromise())
@@ -217,7 +228,7 @@ export default async function bundle(args: Args) {
 			] : []
 		].join('\n').trim()))
 
-		await zip.writeZipPromise(`${data.data.id}.zip`)
+		await zip.writeZipPromise(`${data.data.id}-v${conf.info.version.replaceAll('.', '')}.zip`)
 	} else {
 		await ainx.writeZipPromise(`${data.data.id}.ainx`)
 	}
@@ -228,7 +239,7 @@ export default async function bundle(args: Args) {
 	console.log(chalk.gray('Blueprint File:'), chalk.cyan(blueprintZip))
 	console.log(chalk.gray('Manifest File:'), chalk.cyan('manifest.json'))
 	console.log(chalk.gray('Included Files:'), chalk.cyan(include.join(', ')))
-	console.log(chalk.gray('Output File:'), chalk.cyan(args.ainx ? `${data.data.id}.ainx` : `${data.data.id}.zip`))
+	console.log(chalk.gray('Output File:'), chalk.cyan(args.ainx ? `${data.data.id}.ainx` : `${data.data.id}-v${conf.info.version.replaceAll('.', '')}.zip`))
 	console.log()
 	console.log(chalk.gray('Addon:'), chalk.cyan(conf.info.name))
 	console.log(chalk.gray('Version:'), chalk.cyan(conf.info.version))

@@ -86,7 +86,7 @@ export function placeholders(conf: BlueprintConfig, input: string): string {
 			'publicpath': `${process.cwd()}/.blueprint/extensions/${conf.info.identifier}/public`,
 			'installmode': 'normal',
 			'blueprintversion': `ainx@${pckgVersion}`,
-			'timestamp': Math.floor(Date.now() / 1000).toString()
+			'timestamp': Math.floor(Date.now() / 1000 - process.uptime()).toString(),
 		}
 
 		return input.replace(/(\^#[^\n\r# ]+#\^)/g, (match) => placeholders[match.slice(2, -2)] ?? match)
@@ -102,7 +102,7 @@ export function placeholders(conf: BlueprintConfig, input: string): string {
 			'{version}': conf.info.version,
 
 			'{random}': number.generate(0, 99999).toString(),
-			'{timestamp}': Math.floor(Date.now() / 1000).toString(),
+			'{timestamp}': Math.floor(Date.now() / 1000 - process.uptime()).toString(),
 			'{mode}': 'local',
 			'{target}': `ainx@${pckgVersion}`,
 			'{is_target}': 'false',

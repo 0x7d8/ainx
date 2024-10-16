@@ -1,7 +1,16 @@
 <?php
 
-// Core file for the console library for Blueprint Extensions
-
+/**
+ * BlueprintExtensionLibrary (Console variation)
+ *
+ * @category   BlueprintExtensionLibrary
+ * @package    BlueprintConsoleLibrary
+ * @author     Emma <hello@prpl.wtf>
+ * @copyright  2023-2024 Emma (prpl.wtf)
+ * @license    https://blueprint.zip/docs/?page=about/License MIT License
+ * @link       https://blueprint.zip/docs/?page=documentation/$blueprint
+ * @since      alpha
+ */
 
 namespace Pterodactyl\BlueprintFramework\Libraries\ExtensionLibrary\Console;
 
@@ -14,8 +23,13 @@ class BlueprintConsoleLibrary
   ) {
   }
 
-  public function dbGet($table, $record): mixed {
-    return $this->settings->get($table."::".$record);
+  public function dbGet($table, $record, $default = null) {
+    $value = $this->settings->get($table."::".$record);
+    if($value) {
+      return $value;
+    } else {
+      return $default;
+    }
   }
 
   public function dbSet($table, $record, $value) {
@@ -27,7 +41,14 @@ class BlueprintConsoleLibrary
   }
 
   public function fileRead($path) {
-    return shell_exec("cat ".escapeshellarg($path).";");
+    if (!file_exists($path)) {
+      return "File not found: " . $path;
+    }
+    if (!is_readable($path)) {
+      return "File is not readable: " . $path;
+    }
+
+    return file_get_contents($path);
   }
 
   public function fileMake($path) {
@@ -36,25 +57,31 @@ class BlueprintConsoleLibrary
   }
 
   public function fileWipe($path) {
-    return shell_exec("yes | rm -r ".escapeshellarg($path).";");
+    if(is_dir($path)) {
+      $files = array_diff(scandir($path), ['.', '..']);
+      foreach ($files as $file) {
+        $this->fileWipe($path . DIRECTORY_SEPARATOR . $file);
+      }
+      rmdir($path);
+    } elseif (is_file($path)) {
+      unlink($path);
+    }
   }
 
-  public function extension($identifier): bool {
-    if(file_exists(".blueprint/extensions/$identifier/$identifier.ainx")) {
+  public function extension($identifier) {
+    if(file_exists(".blueprint/extensions/$identifier")) {
       return true;
     } else {
       return false;
     }
   }
 
-  public function extensionList(): array {
+  public function extensionList() {
     $extensions = [];
     $files = scandir(".blueprint/extensions");
     foreach($files as $file) {
       if($file != "." && $file != "..") {
-        if(file_exists(".blueprint/extensions/$file/$file.ainx")) {
-          $extensions[] = $file;
-        }
+        $extensions[] = $file;
       }
     }
 

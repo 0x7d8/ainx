@@ -5,12 +5,13 @@ import AdmZip from "adm-zip"
 import { version as pckgVersion } from "../../package.json"
 import { manifest } from "src/types/manifest"
 import path from "path"
-import { filesystem, system } from "@rjweb/utils"
+import { filesystem, number, system } from "@rjweb/utils"
 import cp from "child_process"
 import rebuild from "src/commands/rebuild"
 import semver from "semver"
 import * as blueprint from "src/globals/blueprint"
 import { intercept } from "src/globals/log"
+import * as ainx from "src/globals/ainx"
 
 import ExtensionController from "src/compat/app/Http/Controllers/Admin/ExtensionController.php"
 import BladeIndex from "src/compat/resources/views/admin/extensions/index.blade.php"
@@ -81,32 +82,28 @@ export default async function install(args: Args, skipRoutes: boolean = false) {
 	}
 
 	try {
-		const zip = new AdmZip(args.file)
+		const [ data, conf, zip ] = ainx.parse(args.file)
 		if (!zip.test()) {
 			console.error(chalk.red('Invalid ainx file'))
 			process.exit(1)
 		}
 
-		const data = manifest.safeParse(JSON.parse(zip.readAsText('manifest.json')))
-		if (!data.success) {
-			console.error(chalk.red('Invalid ainx file'))
-			process.exit(1)
-		}
-
-		if (semver.gt(data.data.ainxRequirement, pckgVersion)) {
+		if (semver.gt(data.ainxRequirement, pckgVersion)) {
 			console.error(chalk.red('Ainx version requirement not met'))
-			console.log(chalk.gray('Update using:'), chalk.cyan('npm i -g ainx@latest'))
-			console.log(chalk.gray('Required:'), chalk.cyan(data.data.ainxRequirement))
+			console.log(chalk.gray('Required:'), chalk.cyan(data.ainxRequirement))
 			console.log(chalk.gray('Current:'), chalk.cyan(pckgVersion))
+			console.log(chalk.gray('Update using:'))
+			console.log(chalk.cyan('npm i -g ainx@latest'))
+
 			process.exit(1)
 		}
 
-		if (data.data.hasRemove && fs.existsSync(data.data.hasRemove)) {
+		if (data.hasRemove && fs.existsSync(data.hasRemove)) {
 			console.error(chalk.red('Addon has a remove script, you may need to remove the addon first before installing with ainx'))
-			console.error(chalk.cyan(`bash ${data.data.hasRemove}`))
+			console.error(chalk.cyan(`bash ${data.hasRemove}`))
 		}
 
-		if (fs.existsSync(`.blueprint/extensions/${data.data.id}/${data.data.id}.ainx`) && !args.force) {
+		if (fs.existsSync(`.blueprint/extensions/${data.id}/${data.id}.ainx`) && !args.force) {
 			console.error(chalk.red('Addon already installed, upgrade instead'))
 			process.exit(1)
 		}
@@ -115,7 +112,7 @@ export default async function install(args: Args, skipRoutes: boolean = false) {
 			const { confirm } = await enquirer.prompt<{ confirm: boolean }>({
 				type: 'confirm',
 				name: 'confirm',
-				message: `Install ${data.data.id}?`
+				message: `Install ${conf.info.name}?`
 			})
 
 			if (!confirm) {
@@ -126,13 +123,10 @@ export default async function install(args: Args, skipRoutes: boolean = false) {
 
 		const start = Date.now()
 
-		console.log(chalk.gray('Installing'), chalk.cyan(data.data.id), chalk.gray('...'))
+		console.log(chalk.gray('Installing'), chalk.cyan(data.id), chalk.gray('...'))
 		console.log()
 
-		const bpZip = new AdmZip(zip.readFile('addon.blueprint') ?? undefined)
-
-		bpZip.extractAllTo('/tmp/ainx/addon', true)
-		const conf = blueprint.config(bpZip.readAsText('conf.yml'))
+		using source = ainx.unpack(zip, '/tmp/ainx/addon')
 
 		console.log(chalk.gray('Addon Name:'), chalk.cyan(conf.info.name))
 		console.log(chalk.gray('Addon Version:'), chalk.cyan(conf.info.version))
@@ -141,39 +135,39 @@ export default async function install(args: Args, skipRoutes: boolean = false) {
 
 		await blueprint.insertCompatFiles()
 
-		const storageStat = await fs.promises.lstat(`storage/extensions/${data.data.id}`).catch(() => null)
+		const storageStat = await fs.promises.lstat(`storage/extensions/${data.id}`).catch(() => null)
 		if (storageStat?.isSymbolicLink() || storageStat?.isDirectory()) {
-			await fs.promises.rm(`storage/extensions/${data.data.id}`, { recursive: true, force: true })
+			await fs.promises.rm(`storage/extensions/${data.id}`, { recursive: true, force: true })
 		}
 
-		console.log(chalk.gray('Linking storage files'), chalk.cyan(data.data.id), chalk.gray('...'))
+		console.log(chalk.gray('Linking storage files'), chalk.cyan(data.id), chalk.gray('...'))
 
-		await fs.promises.mkdir(`.blueprint/extensions/${data.data.id}/fs`, { recursive: true })
+		await fs.promises.mkdir(`.blueprint/extensions/${data.id}/fs`, { recursive: true })
 		await fs.promises.mkdir('storage/extensions', { recursive: true })
-		await fs.promises.symlink(path.join(process.cwd(), '.blueprint/extensions', data.data.id, 'fs'), path.join(process.cwd(), 'storage/extensions', data.data.id))
+		await fs.promises.symlink(path.join(process.cwd(), '.blueprint/extensions', data.id, 'fs'), path.join(process.cwd(), 'storage/extensions', data.id))
 
-		console.log(chalk.gray('Linking storage files'), chalk.cyan(data.data.id), chalk.gray('...'), chalk.bold.green('Done'))
+		console.log(chalk.gray('Linking storage files'), chalk.cyan(data.id), chalk.gray('...'), chalk.bold.green('Done'))
 
-		const publicStat = await fs.promises.lstat(`public/extensions/${data.data.id}`).catch(() => null)
+		const publicStat = await fs.promises.lstat(`public/extensions/${data.id}`).catch(() => null)
 		if (publicStat?.isSymbolicLink() || publicStat?.isDirectory()) {
-			await fs.promises.rm(`public/extensions/${data.data.id}`, { recursive: true, force: true })
+			await fs.promises.rm(`public/extensions/${data.id}`, { recursive: true, force: true })
 		}
 
 		if (conf.admin.controller) {
 			console.log(chalk.gray('Adding admin controller'), chalk.cyan(conf.admin.controller), chalk.gray('...'))
 
-			await fs.promises.mkdir(`app/Http/Controllers/Admin/Extensions/${data.data.id}`, { recursive: true })
-			const content = await fs.promises.readFile(path.join('/tmp/ainx/addon', conf.admin.controller), 'utf-8')
+			await fs.promises.mkdir(`app/Http/Controllers/Admin/Extensions/${data.id}`, { recursive: true })
+			const content = await fs.promises.readFile(path.join(source.path(), conf.admin.controller), 'utf-8')
 
-			await fs.promises.writeFile(`app/Http/Controllers/Admin/Extensions/${data.data.id}/${data.data.id}ExtensionController.php`, blueprint.placeholders(conf, content))
+			await fs.promises.writeFile(`app/Http/Controllers/Admin/Extensions/${data.id}/${data.id}ExtensionController.php`, blueprint.placeholders(conf, content))
 
 			console.log(chalk.gray('Adding admin controller'), chalk.cyan(conf.admin.controller), chalk.gray('...'), chalk.bold.green('Done'))
 		} else {
 			console.log(chalk.gray('Adding default admin controller'), chalk.cyan(conf.admin.controller), chalk.gray('...'))
 
-			await fs.promises.mkdir(`app/Http/Controllers/Admin/Extensions/${data.data.id}`, { recursive: true })
+			await fs.promises.mkdir(`app/Http/Controllers/Admin/Extensions/${data.id}`, { recursive: true })
 
-			await fs.promises.writeFile(`app/Http/Controllers/Admin/Extensions/${data.data.id}/${data.data.id}ExtensionController.php`, ExtensionController.replaceAll('__identifier__', data.data.id))
+			await fs.promises.writeFile(`app/Http/Controllers/Admin/Extensions/${data.id}/${data.id}ExtensionController.php`, ExtensionController.replaceAll('__identifier__', data.id))
 
 			console.log(chalk.gray('Adding default admin controller'), chalk.cyan(conf.admin.controller), chalk.gray('...'), chalk.bold.green('Done'))
 		}
@@ -181,21 +175,21 @@ export default async function install(args: Args, skipRoutes: boolean = false) {
 		{
 			console.log(chalk.gray('Adding admin view'), chalk.cyan(conf.admin.view), chalk.gray('...'))
 
-			await fs.promises.mkdir(`resources/views/admin/extensions/${data.data.id}`, { recursive: true })
-			const content = await fs.promises.readFile(path.join('/tmp/ainx/addon', conf.admin.view), 'utf-8')
+			await fs.promises.mkdir(`resources/views/admin/extensions/${data.id}`, { recursive: true })
+			const content = await fs.promises.readFile(path.join(source.path(), conf.admin.view), 'utf-8')
 
-			let icon = ''
+			let icon: string
 			if (conf.info.icon) {
-				await fs.promises.mkdir(`public/assets/extensions/${data.data.id}`, { recursive: true })
-				await fs.promises.cp(path.join('/tmp/ainx/addon', conf.info.icon), `public/assets/extensions/${data.data.id}/${conf.info.icon}`)
+				await fs.promises.mkdir(`public/assets/extensions/${data.id}`, { recursive: true })
+				await fs.promises.cp(path.join(source.path(), conf.info.icon), `public/assets/extensions/${data.id}/${conf.info.icon}`)
 
-				icon = `/assets/extensions/${data.data.id}/${conf.info.icon}`
+				icon = `/assets/extensions/${data.id}/${conf.info.icon}`
 			} else {
-				icon = 'https://raw.githubusercontent.com/BlueprintFramework/framework/refs/heads/main/blueprint/assets/Extensions/Defaults/1.jpg'
+				icon = `https://raw.githubusercontent.com/BlueprintFramework/framework/refs/heads/main/blueprint/assets/Extensions/Defaults/${number.generate(1, 5)}.jpg`
 			}
 
 			await fs.promises.writeFile(
-				`resources/views/admin/extensions/${data.data.id}/index.blade.php`,
+				`resources/views/admin/extensions/${data.id}/index.blade.php`,
 				blueprint.placeholders(conf, BladeIndex.replace('__description__', conf.info.description).replace('__icon__', icon).replace('__content__', content))
 			)
 
@@ -205,10 +199,10 @@ export default async function install(args: Args, skipRoutes: boolean = false) {
 		if (conf.data?.public) {
 			console.log(chalk.gray('Linking public files'), chalk.cyan(conf.data.public), chalk.gray('...'))
 
-			await fs.promises.cp(path.join('/tmp/ainx/addon', conf.data.public), path.join('.blueprint/extensions', data.data.id, 'public'), { recursive: true })
+			await fs.promises.cp(path.join(source.path(), conf.data.public), path.join('.blueprint/extensions', data.id, 'public'), { recursive: true })
 			await fs.promises.mkdir('public/extensions', { recursive: true })
-			await fs.promises.symlink(path.join(process.cwd(), '.blueprint/extensions', data.data.id, 'public'), path.join(process.cwd(), 'public/extensions', data.data.id),)
-			await blueprint.recursivePlaceholders(conf, path.join('.blueprint/extensions', data.data.id, 'public'))
+			await fs.promises.symlink(path.join(process.cwd(), '.blueprint/extensions', data.id, 'public'), path.join(process.cwd(), 'public/extensions', data.id),)
+			await blueprint.recursivePlaceholders(conf, path.join('.blueprint/extensions', data.id, 'public'))
 
 			console.log(chalk.gray('Linking public files'), chalk.cyan(conf.data.public), chalk.gray('...'), chalk.bold.green('Done'))
 		}
@@ -216,14 +210,14 @@ export default async function install(args: Args, skipRoutes: boolean = false) {
 		if (conf.admin.css) {
 			console.log(chalk.gray('Applying admin css'), chalk.cyan(conf.admin.css), chalk.gray('...'))
 
-			await fs.promises.mkdir(`.blueprint/extensions/${data.data.id}/assets`, { recursive: true })
-			const content = await fs.promises.readFile(path.join('/tmp/ainx/addon', conf.admin.css), 'utf-8')
+			await fs.promises.mkdir(`.blueprint/extensions/${data.id}/assets`, { recursive: true })
+			const content = await fs.promises.readFile(path.join(source.path(), conf.admin.css), 'utf-8')
 
-			await fs.promises.writeFile(`.blueprint/extensions/${data.data.id}/assets/admin.style.css`, blueprint.placeholders(conf, content))
-			await filesystem.replace('resources/views/layouts/admin.blade.php', '</body>', `</body>\n    <link rel="stylesheet" href="/extensions/${data.data.id}/_assets/admin.style.css?t={{ \\Illuminate\\Support\\Facades\\DB::table('settings')->where('key', 'blueprint::cache')->first()->value }}">`)
+			await fs.promises.writeFile(`.blueprint/extensions/${data.id}/assets/admin.style.css`, blueprint.placeholders(conf, content))
+			await filesystem.replace('resources/views/layouts/admin.blade.php', '</body>', `</body>\n    <link rel="stylesheet" href="/extensions/${data.id}/_assets/admin.style.css?t={{ \\Illuminate\\Support\\Facades\\DB::table('settings')->where('key', 'blueprint::cache')->first()->value }}">`)
 
-			const assetsStat = await fs.promises.stat(`public/extensions/${data.data.id}/_assets`).catch(() => null)
-			if (!assetsStat?.isSymbolicLink() && !assetsStat?.isDirectory()) await fs.promises.symlink(path.join(process.cwd(), '.blueprint/extensions', data.data.id, 'assets'), path.join(process.cwd(), 'public/extensions', data.data.id, '_assets'))
+			const assetsStat = await fs.promises.stat(`public/extensions/${data.id}/_assets`).catch(() => null)
+			if (!assetsStat?.isSymbolicLink() && !assetsStat?.isDirectory()) await fs.promises.symlink(path.join(process.cwd(), '.blueprint/extensions', data.id, 'assets'), path.join(process.cwd(), 'public/extensions', data.id, '_assets'))
 
 			console.log(chalk.gray('Applying admin css'), chalk.cyan(conf.admin.css), chalk.gray('...'), chalk.bold.green('Done'))
 		}
@@ -231,14 +225,14 @@ export default async function install(args: Args, skipRoutes: boolean = false) {
 		if (conf.dashboard?.css) {
 			console.log(chalk.gray('Applying dashboard css'), chalk.cyan(conf.dashboard.css), chalk.gray('...'))
 
-			await fs.promises.mkdir(`.blueprint/extensions/${data.data.id}/assets`, { recursive: true })
-			const content = await fs.promises.readFile(path.join('/tmp/ainx/addon', conf.dashboard.css), 'utf-8')
+			await fs.promises.mkdir(`.blueprint/extensions/${data.id}/assets`, { recursive: true })
+			const content = await fs.promises.readFile(path.join(source.path(), conf.dashboard.css), 'utf-8')
 
-			await fs.promises.writeFile(`.blueprint/extensions/${data.data.id}/assets/dashboard.style.css`, blueprint.placeholders(conf, content))
-			await filesystem.replace('resources/views/templates/wrapper.blade.php', '</body>', `</body>\n    <link rel="stylesheet" href="/extensions/${data.data.id}/_assets/dashboard.style.css?t={{ \\Illuminate\\Support\\Facades\\DB::table('settings')->where('key', 'blueprint::cache')->first()->value }}">`)
+			await fs.promises.writeFile(`.blueprint/extensions/${data.id}/assets/dashboard.style.css`, blueprint.placeholders(conf, content))
+			await filesystem.replace('resources/views/templates/wrapper.blade.php', '</body>', `</body>\n    <link rel="stylesheet" href="/extensions/${data.id}/_assets/dashboard.style.css?t={{ \\Illuminate\\Support\\Facades\\DB::table('settings')->where('key', 'blueprint::cache')->first()->value }}">`)
 
-			const assetsStat = await fs.promises.stat(`public/extensions/${data.data.id}/_assets`).catch(() => null)
-			if (!assetsStat?.isSymbolicLink() && !assetsStat?.isDirectory()) await fs.promises.symlink(path.join(process.cwd(), '.blueprint/extensions', data.data.id, 'assets'), path.join(process.cwd(), 'public/extensions', data.data.id, '_assets'))
+			const assetsStat = await fs.promises.stat(`public/extensions/${data.id}/_assets`).catch(() => null)
+			if (!assetsStat?.isSymbolicLink() && !assetsStat?.isDirectory()) await fs.promises.symlink(path.join(process.cwd(), '.blueprint/extensions', data.id, 'assets'), path.join(process.cwd(), 'public/extensions', data.id, '_assets'))
 
 			console.log(chalk.gray('Applying dashboard css'), chalk.cyan(conf.dashboard.css), chalk.gray('...'), chalk.bold.green('Done'))
 		}
@@ -246,13 +240,13 @@ export default async function install(args: Args, skipRoutes: boolean = false) {
 		if (conf.admin.wrapper) {
 			console.log(chalk.gray('Applying admin wrapper'), chalk.cyan(conf.admin.wrapper), chalk.gray('...'))
 
-			await fs.promises.mkdir(`.blueprint/extensions/${data.data.id}/_wrappers`, { recursive: true })
-			const content = await fs.promises.readFile(path.join('/tmp/ainx/addon', conf.admin.wrapper), 'utf-8')
+			await fs.promises.mkdir(`.blueprint/extensions/${data.id}/_wrappers`, { recursive: true })
+			const content = await fs.promises.readFile(path.join(source.path(), conf.admin.wrapper), 'utf-8')
 
-			await fs.promises.writeFile(`.blueprint/extensions/${data.data.id}/_wrappers/admin.blade.php`, blueprint.placeholders(conf, content))
+			await fs.promises.writeFile(`.blueprint/extensions/${data.id}/_wrappers/admin.blade.php`, blueprint.placeholders(conf, content))
 
 			await fs.promises.mkdir('resources/views/blueprint/admin/wrappers', { recursive: true })
-			await fs.promises.symlink(path.join(process.cwd(), '.blueprint/extensions', data.data.id, '_wrappers', 'admin.blade.php'), path.join(process.cwd(), 'resources/views/blueprint/admin/wrappers', `${data.data.id}.blade.php`))
+			await fs.promises.symlink(path.join(process.cwd(), '.blueprint/extensions', data.id, '_wrappers', 'admin.blade.php'), path.join(process.cwd(), 'resources/views/blueprint/admin/wrappers', `${data.id}.blade.php`))
 
 			console.log(chalk.gray('Applying admin wrapper'), chalk.cyan(conf.admin.wrapper), chalk.gray('...'), chalk.bold.green('Done'))
 		}
@@ -260,13 +254,13 @@ export default async function install(args: Args, skipRoutes: boolean = false) {
 		if (conf.dashboard?.wrapper) {
 			console.log(chalk.gray('Applying dashboard wrapper'), chalk.cyan(conf.dashboard.wrapper), chalk.gray('...'))
 
-			await fs.promises.mkdir(`.blueprint/extensions/${data.data.id}/_wrappers`, { recursive: true })
-			const content = await fs.promises.readFile(path.join('/tmp/ainx/addon', conf.dashboard.wrapper), 'utf-8')
+			await fs.promises.mkdir(`.blueprint/extensions/${data.id}/_wrappers`, { recursive: true })
+			const content = await fs.promises.readFile(path.join(source.path(), conf.dashboard.wrapper), 'utf-8')
 
-			await fs.promises.writeFile(`.blueprint/extensions/${data.data.id}/_wrappers/dashboard.blade.php`, blueprint.placeholders(conf, content))
+			await fs.promises.writeFile(`.blueprint/extensions/${data.id}/_wrappers/dashboard.blade.php`, blueprint.placeholders(conf, content))
 
 			await fs.promises.mkdir('resources/views/blueprint/dashboard/wrappers', { recursive: true })
-			await fs.promises.symlink(path.join(process.cwd(), '.blueprint/extensions', data.data.id, '_wrappers', 'dashboard.blade.php'), path.join(process.cwd(), 'resources/views/blueprint/dashboard/wrappers', `${data.data.id}.blade.php`))
+			await fs.promises.symlink(path.join(process.cwd(), '.blueprint/extensions', data.id, '_wrappers', 'dashboard.blade.php'), path.join(process.cwd(), 'resources/views/blueprint/dashboard/wrappers', `${data.id}.blade.php`))
 
 			console.log(chalk.gray('Applying dashboard wrapper'), chalk.cyan(conf.dashboard.wrapper), chalk.gray('...'), chalk.bold.green('Done'))
 		}
@@ -274,13 +268,13 @@ export default async function install(args: Args, skipRoutes: boolean = false) {
 		if (conf.data?.directory) {
 			console.log(chalk.gray('Copying private files'), chalk.cyan(conf.data.directory), chalk.gray('...'))
 
-			await fs.promises.mkdir(`.blueprint/extensions/${data.data.id}`, { recursive: true })
-			await fs.promises.cp(path.join('/tmp/ainx/addon', conf.data.directory), `.blueprint/extensions/${data.data.id}/private`, { recursive: true })
+			await fs.promises.mkdir(`.blueprint/extensions/${data.id}`, { recursive: true })
+			await fs.promises.cp(path.join(source.path(), conf.data.directory), `.blueprint/extensions/${data.id}/private`, { recursive: true })
 
-			await blueprint.recursivePlaceholders(conf, `.blueprint/extensions/${data.data.id}/private`)
+			await blueprint.recursivePlaceholders(conf, `.blueprint/extensions/${data.id}/private`)
 
-			if (conf.info.flags?.includes('hasInstallScript') && fs.existsSync(`.blueprint/extensions/${data.data.id}/private/install.sh`)) {
-				const cmd = cp.spawn('bash', [`.blueprint/extensions/${data.data.id}/private/install.sh`], {
+			if (conf.info.flags?.includes('hasInstallScript') && fs.existsSync(`.blueprint/extensions/${data.id}/private/install.sh`)) {
+				const cmd = cp.spawn('bash', [`.blueprint/extensions/${data.id}/private/install.sh`], {
 					stdio: 'inherit',
 					cwd: process.cwd(),
 					env: {
@@ -296,69 +290,69 @@ export default async function install(args: Args, skipRoutes: boolean = false) {
 		}
 
 		{
-			console.log(chalk.gray('Adding admin router'), chalk.cyan(data.data.id), chalk.gray('...'))
+			console.log(chalk.gray('Adding admin router'), chalk.cyan(data.id), chalk.gray('...'))
 
-			await fs.promises.appendFile('routes/admin.php', `\ninclude 'admin-${data.data.id}.php';`)
+			await fs.promises.appendFile('routes/admin.php', `\ninclude 'admin-${data.id}.php';`)
 
-			await fs.promises.writeFile(`routes/admin-${data.data.id}.php`, Admin.replaceAll('__identifier__', data.data.id))
+			await fs.promises.writeFile(`routes/admin-${data.id}.php`, Admin.replaceAll('__identifier__', data.id))
 
-			console.log(chalk.gray('Adding admin router'), chalk.cyan(data.data.id), chalk.gray('...'), chalk.bold.green('Done'))
+			console.log(chalk.gray('Adding admin router'), chalk.cyan(data.id), chalk.gray('...'), chalk.bold.green('Done'))
 		}
 
-		if (conf.requests?.routers?.client && !fs.existsSync(`routes/client-${data.data.id}.php`)) {
-			console.log(chalk.gray('Adding client router'), chalk.cyan(`routes/client-${data.data.id}.php`), chalk.gray('...'))
+		if (conf.requests?.routers?.client && !fs.existsSync(`routes/client-${data.id}.php`)) {
+			console.log(chalk.gray('Adding client router'), chalk.cyan(`routes/client-${data.id}.php`), chalk.gray('...'))
 
-			await fs.promises.appendFile('routes/api-client.php', `\ninclude 'client-${data.data.id}.php';`)
+			await fs.promises.appendFile('routes/api-client.php', `\ninclude 'client-${data.id}.php';`)
 
-			const client = bpZip.readAsText(conf.requests.routers.client)
-				.replace('\'prefix\' => \'', `'prefix' => '/extensions/${data.data.id}`)
+			const client = await fs.promises.readFile(path.join(source.path(), conf.requests.routers.client), 'utf-8').then((content) => content
+				.replace('\'prefix\' => \'', `'prefix' => '/extensions/${data.id}`))
 
-			await fs.promises.writeFile(`routes/client-${data.data.id}.php`, blueprint.placeholders(conf, client))
+			await fs.promises.writeFile(`routes/client-${data.id}.php`, blueprint.placeholders(conf, client))
 
-			console.log(chalk.gray('Adding client router'), chalk.cyan(`routes/client-${data.data.id}.php`), chalk.gray('...'), chalk.bold.green('Done'))
+			console.log(chalk.gray('Adding client router'), chalk.cyan(`routes/client-${data.id}.php`), chalk.gray('...'), chalk.bold.green('Done'))
 		}
 
-		if (conf.requests?.routers?.application && !fs.existsSync(`routes/application-${data.data.id}.php`)) {
-			console.log(chalk.gray('Adding application router'), chalk.cyan(`routes/application-${data.data.id}.php`), chalk.gray('...'))
+		if (conf.requests?.routers?.application && !fs.existsSync(`routes/application-${data.id}.php`)) {
+			console.log(chalk.gray('Adding application router'), chalk.cyan(`routes/application-${data.id}.php`), chalk.gray('...'))
 
-			await fs.promises.appendFile('routes/api-application.php', `\ninclude 'application-${data.data.id}.php';`)
+			await fs.promises.appendFile('routes/api-application.php', `\ninclude 'application-${data.id}.php';`)
 
-			const application = bpZip.readAsText(conf.requests.routers.application)
-				.replace('\'prefix\' => \'', `'prefix' => '/extensions/${data.data.id}`)
+			const application = await fs.promises.readFile(path.join(source.path(), conf.requests.routers.application), 'utf-8').then((content) => content
+				.replace('\'prefix\' => \'', `'prefix' => '/extensions/${data.id}`))
 
-			await fs.promises.writeFile(`routes/application-${data.data.id}.php`, blueprint.placeholders(conf, application))
+			await fs.promises.writeFile(`routes/application-${data.id}.php`, blueprint.placeholders(conf, application))
 
-			console.log(chalk.gray('Adding application router'), chalk.cyan(`routes/application-${data.data.id}.php`), chalk.gray('...'), chalk.bold.green('Done'))
+			console.log(chalk.gray('Adding application router'), chalk.cyan(`routes/application-${data.id}.php`), chalk.gray('...'), chalk.bold.green('Done'))
 		}
 
-		if (conf.requests?.routers?.web && !fs.existsSync(`routes/base-${data.data.id}.php`)) {
-			console.log(chalk.gray('Adding base router'), chalk.gray(`routes/base-${data.data.id}.php`), chalk.gray('...'))
+		if (conf.requests?.routers?.web && !fs.existsSync(`routes/base-${data.id}.php`)) {
+			console.log(chalk.gray('Adding base router'), chalk.gray(`routes/base-${data.id}.php`), chalk.gray('...'))
 
-			await fs.promises.appendFile('routes/base.php', `\ninclude 'base-${data.data.id}.php';`)
+			await fs.promises.appendFile('routes/base.php', `\ninclude 'base-${data.id}.php';`)
 
-			const web = bpZip.readAsText(conf.requests.routers.web)
-				.replace('\'prefix\' => \'', `'prefix' => '/extensions/${data.data.id}`)
+			const web = await fs.promises.readFile(path.join(source.path(), conf.requests.routers.web), 'utf-8').then((content) => content
+				.replace('\'prefix\' => \'', `'prefix' => '/extensions/${data.id}`))
 
-			await fs.promises.writeFile(`routes/base-${data.data.id}.php`, blueprint.placeholders(conf, web))
+			await fs.promises.writeFile(`routes/base-${data.id}.php`, blueprint.placeholders(conf, web))
 
-			console.log(chalk.gray('Adding base router'), chalk.gray(`routes/base-${data.data.id}.php`), chalk.gray('...'), chalk.bold.green('Done'))
+			console.log(chalk.gray('Adding base router'), chalk.gray(`routes/base-${data.id}.php`), chalk.gray('...'), chalk.bold.green('Done'))
 		}
 
-		const controllerStat = await fs.promises.lstat(`app/BlueprintFramework/Extensions/${data.data.id}`).catch(() => null)
+		const controllerStat = await fs.promises.lstat(`app/BlueprintFramework/Extensions/${data.id}`).catch(() => null)
 		if (controllerStat?.isDirectory() || controllerStat?.isSymbolicLink()) {
-			await fs.promises.rm(`app/BlueprintFramework/Extensions/${data.data.id}`, { recursive: true, force: true })
+			await fs.promises.rm(`app/BlueprintFramework/Extensions/${data.id}`, { recursive: true, force: true })
 		}
 
 		if (conf.requests?.app) {
 			console.log(chalk.gray('Linking app'), chalk.cyan(conf.requests.app), chalk.gray('...'))
 
-			await fs.promises.mkdir(`.blueprint/extensions/${data.data.id}/app`, { recursive: true })
-			await fs.promises.cp(path.join('/tmp/ainx/addon', conf.requests.app), `.blueprint/extensions/${data.data.id}/app`, { recursive: true })
+			await fs.promises.mkdir(`.blueprint/extensions/${data.id}/app`, { recursive: true })
+			await fs.promises.cp(path.join(source.path(), conf.requests.app), `.blueprint/extensions/${data.id}/app`, { recursive: true })
 
 			await fs.promises.mkdir('app/BlueprintFramework/Extensions', { recursive: true })
-			await fs.promises.symlink(path.join(process.cwd(), '.blueprint/extensions', data.data.id, 'app'), path.join(process.cwd(), 'app/BlueprintFramework/Extensions', data.data.id))
+			await fs.promises.symlink(path.join(process.cwd(), '.blueprint/extensions', data.id, 'app'), path.join(process.cwd(), 'app/BlueprintFramework/Extensions', data.id))
 
-			await blueprint.recursivePlaceholders(conf, `app/BlueprintFramework/Extensions/${data.data.id}`)
+			await blueprint.recursivePlaceholders(conf, `app/BlueprintFramework/Extensions/${data.id}`)
 
 			console.log(chalk.gray('Linking app'), chalk.cyan(conf.requests.app), chalk.gray('...'), chalk.bold.green('Done'))
 		}
@@ -366,33 +360,33 @@ export default async function install(args: Args, skipRoutes: boolean = false) {
 		if (conf.requests?.views) {
 			console.log(chalk.gray('Linking views'), chalk.cyan(conf.requests.views), chalk.gray('...'))
 
-			await fs.promises.mkdir(`.blueprint/extensions/${data.data.id}/_views`, { recursive: true })
-			await fs.promises.cp(path.join('/tmp/ainx/addon', conf.requests.views), `.blueprint/extensions/${data.data.id}/_views`, { recursive: true })
+			await fs.promises.mkdir(`.blueprint/extensions/${data.id}/_views`, { recursive: true })
+			await fs.promises.cp(path.join(source.path(), conf.requests.views), `.blueprint/extensions/${data.id}/_views`, { recursive: true })
 
 			await fs.promises.mkdir('resources/views/blueprint/extensions', { recursive: true })
-			await fs.promises.symlink(path.join(process.cwd(), '.blueprint/extensions', data.data.id, '_views'), path.join(process.cwd(), 'resources/views/blueprint/extensions', data.data.id))
+			await fs.promises.symlink(path.join(process.cwd(), '.blueprint/extensions', data.id, '_views'), path.join(process.cwd(), 'resources/views/blueprint/extensions', data.id))
 
-			await blueprint.recursivePlaceholders(conf, `resources/views/blueprint/extensions/${data.data.id}`)
+			await blueprint.recursivePlaceholders(conf, `resources/views/blueprint/extensions/${data.id}`)
 
 			console.log(chalk.gray('Linking views'), chalk.cyan(conf.requests.views), chalk.gray('...'), chalk.bold.green('Done'))
 		}
 
-		if (conf.database?.migrations && !fs.existsSync(`database/migrations-${data.data.id}`)) {
+		if (conf.database?.migrations && !fs.existsSync(`database/migrations-${data.id}`)) {
 			console.log(chalk.gray('Copying migrations'), chalk.cyan(conf.database.migrations), chalk.gray('...'))
 
-			await fs.promises.mkdir(`database/migrations-${data.data.id}`, { recursive: true })
+			await fs.promises.mkdir(`database/migrations-${data.id}`, { recursive: true })
 
-			const migrations = await fs.promises.readdir(path.join('/tmp/ainx/addon', conf.database.migrations))
+			const migrations = await fs.promises.readdir(path.join(source.path(), conf.database.migrations))
 			for (const migration of migrations) {
-				const content = await fs.promises.readFile(path.join('/tmp/ainx/addon', conf.database.migrations, migration))
+				const content = await fs.promises.readFile(path.join(source.path(), conf.database.migrations, migration))
 
-				await fs.promises.writeFile(`database/migrations-${data.data.id}/${migration}`, content)
+				await fs.promises.writeFile(`database/migrations-${data.id}/${migration}`, content)
 			}
 
 			console.log(chalk.gray('Copying migrations'), chalk.cyan(conf.database.migrations), chalk.gray('...'), chalk.bold.green('Done'))
 		}
 
-		if (!args.skipSteps) for (const step of data.data.installation) {
+		if (!args.skipSteps) for (const step of data.installation) {
 			switch (step.type) {
 				case "copy": {
 					console.log(chalk.gray('Copying'), chalk.cyan(step.source), chalk.gray('to'), chalk.cyan(step.destination), chalk.gray('...'))
@@ -523,22 +517,25 @@ export default async function install(args: Args, skipRoutes: boolean = false) {
 		}
 
 		if (conf.database?.migrations) {
-			const files = await fs.promises.readdir(`database/migrations-${data.data.id}`).then((files) => files.length)
+			const files = await fs.promises.readdir(`database/migrations-${data.id}`).then((files) => files.length)
 
-			await blueprint.recursivePlaceholders(conf, `database/migrations-${data.data.id}`)
+			await blueprint.recursivePlaceholders(conf, `database/migrations-${data.id}`)
 
 			console.log(chalk.gray('Running'), chalk.cyan(files), chalk.gray('migration(s) ...'))
 
-			system.execute(`php artisan migrate --force --path=database/migrations-${data.data.id}`)
+			system.execute(`php artisan migrate --force --path=database/migrations-${data.id}`)
 
 			console.log(chalk.gray('Running'), chalk.cyan(files), chalk.gray('migration(s) ...'), chalk.bold.green('Done'))
 		}
+
+		try {
+			system.execute('php artisan view:clear')
+		}	catch { }
 
 		if (args.rebuild) await rebuild({
 			disableSmoothMode: args.disableSmoothMode
 		})
 
-		await fs.promises.rm('/tmp/ainx/addon', { recursive: true })
 		try {
 			system.execute('php artisan optimize')
 		}	catch { }
@@ -546,10 +543,10 @@ export default async function install(args: Args, skipRoutes: boolean = false) {
 		await blueprint.updateBlueprintCache()
 		await blueprint.applyPermissions()
 
-		if (!fs.existsSync(`.blueprint/extensions/${data.data.id}`)) await fs.promises.mkdir(`.blueprint/extensions/${data.data.id}`, { recursive: true })
-		await fs.promises.cp(args.file, `.blueprint/extensions/${data.data.id}/${data.data.id}.ainx`)
+		if (!fs.existsSync(`.blueprint/extensions/${data.id}`)) await fs.promises.mkdir(`.blueprint/extensions/${data.id}`, { recursive: true })
+		await fs.promises.cp(args.file, `.blueprint/extensions/${data.id}/${data.id}.ainx`)
 
-		console.log(chalk.gray('Installing'), chalk.cyan(data.data.id), chalk.gray('...'), chalk.bold.green('Done'))
+		console.log(chalk.gray('Installing'), chalk.cyan(data.id), chalk.gray('...'), chalk.bold.green('Done'))
 		console.log(chalk.italic.gray(`Took ${Date.now() - start}ms`))
 
 		if (!args.force) await log.ask()

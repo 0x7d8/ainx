@@ -1,6 +1,5 @@
 @extends('layouts.admin')
 <?php 
-    // Define extension information.
     $EXTENSION_ID = "{identifier}";
     $EXTENSION_NAME = "{name}";
     $EXTENSION_VERSION = "{version}";

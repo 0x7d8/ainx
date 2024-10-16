@@ -9,8 +9,8 @@ importers:
   .:
     devDependencies:
       '@rjweb/utils':
-        specifier: ^1.12.23
-        version: 1.12.23
+        specifier: ^1.12.24
+        version: 1.12.24
       '@types/adm-zip':
         specifier: ^0.5.5
         version: 0.5.5
@@ -99,8 +99,8 @@ packages:
     cpu: [x64]
     os: [win32]
 
-  '@rjweb/utils@1.12.23':
-    resolution: {integrity: sha512-kOngYEYv3h1sHilVX/2pFk9j4CELVmPgw70U01pikjNPg/myZ4swvXRjmrQnJdvG/ThOtwfD8qrZTkaYEklspg==}
+  '@rjweb/utils@1.12.24':
+    resolution: {integrity: sha512-GgCYymu4qloN23wCyGNDh4UK0vYK9tTwJrsdwfmdZ9sb+9WMP0T2uwV5H7qCENiBmhMTcfarma5aIEebVmUFVA==}
     engines: {node: '>=18.0.0'}
 
   '@types/adm-zip@0.5.5':
@@ -295,7 +295,7 @@ snapshots:
   '@oven/bun-windows-x64@1.1.30':
     optional: true
 
-  '@rjweb/utils@1.12.23':
+  '@rjweb/utils@1.12.24':
     dependencies:
       ts-arithmetic: 0.1.1
 

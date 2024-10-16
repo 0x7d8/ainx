@@ -4,6 +4,9 @@ import remove from "src/commands/remove"
 import install from "src/commands/install"
 import enquirer from "enquirer"
 import { intercept } from "src/globals/log"
+import * as ainx from "src/globals/ainx"
+import { version as pckgVersion } from "../../package.json"
+import semver from "semver"
 
 export type Args = {
 	file: string
@@ -23,10 +26,31 @@ export default async function upgrade(args: Args) {
 		process.exit(1)
 	}
 
+	if (!fs.existsSync(args.file)) {
+		console.error(chalk.red('File does not exist'))
+		process.exit(1)
+	}
+
+	const [ data, conf, zip ] = ainx.parse(args.file)
+	if (!zip.test()) {
+		console.error(chalk.red('Invalid ainx file'))
+		process.exit(1)
+	}
+
+	if (semver.gt(data.ainxRequirement, pckgVersion)) {
+		console.error(chalk.red('Ainx version requirement not met'))
+		console.log(chalk.gray('Required:'), chalk.cyan(data.ainxRequirement))
+		console.log(chalk.gray('Current:'), chalk.cyan(pckgVersion))
+		console.log(chalk.gray('Update using:'))
+		console.log(chalk.cyan('npm i -g ainx@latest'))
+
+		process.exit(1)
+	}
+
 	const { confirm } = await enquirer.prompt<{ confirm: boolean }>({
 		type: 'confirm',
 		name: 'confirm',
-		message: `Upgrade ${args.file.replace('.ainx', '')}?`
+		message: `Upgrade ${conf.info.name}?`
 	})
 
 	const start = Date.now(),

@@ -7,7 +7,7 @@ import * as blueprint from "src/globals/blueprint"
 
 export type Args = {}
 
-export default async function installed(args: Args) {
+export default async function list(args: Args) {
 	if (!fs.existsSync('.blueprint/extensions')) {
 		console.error(chalk.red('No addons installed'))
 		process.exit(1)
@@ -37,15 +37,15 @@ export default async function installed(args: Args) {
 			conf = blueprint.config(bpZip.readAsText('conf.yml'))
 
 		console.log(' ', chalk.bold(conf.info.name))
-		console.log('  ', chalk.gray('Author:'), chalk.cyan(conf.info.author))
-		console.log('  ', chalk.gray('Version:'), chalk.cyan(conf.info.version))
 		console.log('  ', chalk.gray('Identifier:'), chalk.cyan(conf.info.identifier))
-		if (conf.info.website) console.log('  ', chalk.gray('Website:'), chalk.cyan(conf.info.website))
+		console.log('  ', chalk.gray('Version:   '), chalk.cyan(conf.info.version))
+		console.log('  ', chalk.gray('Author:    '), chalk.cyan(conf.info.author))
+		if (conf.info.website) console.log('  ', chalk.gray('Website:   '), chalk.cyan(conf.info.website))
 
 		const ainxFileStat = await fs.promises.stat(`.blueprint/extensions/${data.data.id}/${data.data.id}.ainx`)
 
-		console.log('  ', chalk.gray('Size:'), chalk.cyan(`${(ainxFileStat.size / 1024).toFixed(2)} KB`))
-		console.log('  ', chalk.gray('Installed:'), chalk.cyan(ainxFileStat.mtime.toLocaleString()))
+		console.log('  ', chalk.gray('Installed: '), chalk.cyan(ainxFileStat.mtime.toLocaleString()))
+		console.log('  ', chalk.gray('Size:      '), chalk.cyan(`${(ainxFileStat.size / 1024).toFixed(2)} KB`))
 		console.log()
 	}
 }
