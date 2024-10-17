@@ -1,5 +1,5 @@
 {
-  "version": "1.8.5",
+  "version": "1.8.6",
   "name": "ainx",
   "license": "MIT",
   "type": "module",
@@ -17,10 +17,10 @@
     "url": "https://github.com/0x7d8/ainx.git"
   },
   "devDependencies": {
-    "@rjweb/utils": "^1.12.24",
+    "@rjweb/utils": "^1.12.26",
     "@types/adm-zip": "^0.5.5",
     "@types/js-yaml": "^4.0.9",
-    "@types/node": "^18.19.55",
+    "@types/node": "^18.19.56",
     "@types/semver": "^7.5.8",
     "@types/yargs": "^17.0.33",
     "adm-zip": "0.5.15",

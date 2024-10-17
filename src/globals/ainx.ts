@@ -27,7 +27,7 @@ export function unpack(zip: AdmZip, location: string): { path(): string } {
 	if (blueprintZip) {
 		new AdmZip(blueprintZip.getData()).extractAllTo(location, true, true)
 	} else {
-		zip.extractEntryTo(zip.getEntry('addon')!, location, true, true)
+		zip.extractEntryTo(zip.getEntry('addon/')!, location.split('/').slice(0, -1).join('/'), true, true)
 	}
 
 	return {

@@ -9,8 +9,8 @@ importers:
   .:
     devDependencies:
       '@rjweb/utils':
-        specifier: ^1.12.24
-        version: 1.12.24
+        specifier: ^1.12.26
+        version: 1.12.26
       '@types/adm-zip':
         specifier: ^0.5.5
         version: 0.5.5
@@ -18,8 +18,8 @@ importers:
         specifier: ^4.0.9
         version: 4.0.9
       '@types/node':
-        specifier: ^18.19.55
-        version: 18.19.55
+        specifier: ^18.19.56
+        version: 18.19.56
       '@types/semver':
         specifier: ^7.5.8
         version: 7.5.8
@@ -99,8 +99,8 @@ packages:
     cpu: [x64]
     os: [win32]
 
-  '@rjweb/utils@1.12.24':
-    resolution: {integrity: sha512-GgCYymu4qloN23wCyGNDh4UK0vYK9tTwJrsdwfmdZ9sb+9WMP0T2uwV5H7qCENiBmhMTcfarma5aIEebVmUFVA==}
+  '@rjweb/utils@1.12.26':
+    resolution: {integrity: sha512-LUBR8oOfdjNCd8JDy8C6amZ3Yu6QqyDhaSFAjE56EdTJ13qCaff2HSx3HP2Cqdiz4kMv4I5YkxqAcI5ul57D0w==}
     engines: {node: '>=18.0.0'}
 
   '@types/adm-zip@0.5.5':
@@ -109,8 +109,8 @@ packages:
   '@types/js-yaml@4.0.9':
     resolution: {integrity: sha512-k4MGaQl5TGo/iipqb2UDG2UwjXziSWkh0uysQelTlJpX1qGlpUZYm8PnO4DxG1qBomtJUdYJ6qR6xdIah10JLg==}
 
-  '@types/node@18.19.55':
-    resolution: {integrity: sha512-zzw5Vw52205Zr/nmErSEkN5FLqXPuKX/k5d1D7RKHATGqU7y6YfX9QxZraUzUrFGqH6XzOzG196BC35ltJC4Cw==}
+  '@types/node@18.19.56':
+    resolution: {integrity: sha512-4EMJlWwwGnVPflJAtM14p9eVSa6BOv5b92mCsh5zcM1UagNtEtrbbtaE6WE1tw2TabavatnwqXjlIpcAEuJJNg==}
 
   '@types/semver@7.5.8':
     resolution: {integrity: sha512-I8EUhyrgfLrcTkzV3TSsGyl1tSuPrEDzr0yd5m90UgNxQkyDXULk3b6MlQqTCpZpNtWe1K0hzclnZkTcLBe2UQ==}
@@ -295,17 +295,17 @@ snapshots:
   '@oven/bun-windows-x64@1.1.30':
     optional: true
 
-  '@rjweb/utils@1.12.24':
+  '@rjweb/utils@1.12.26':
     dependencies:
       ts-arithmetic: 0.1.1
 
   '@types/adm-zip@0.5.5':
     dependencies:
-      '@types/node': 18.19.55
+      '@types/node': 18.19.56
 
   '@types/js-yaml@4.0.9': {}
 
-  '@types/node@18.19.55':
+  '@types/node@18.19.56':
     dependencies:
       undici-types: 5.26.5
 
