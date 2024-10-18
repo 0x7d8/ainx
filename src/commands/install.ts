@@ -498,19 +498,8 @@ export default async function install(args: Args, skipRoutes: boolean = false) {
 						'        },'
 					].join('\n')
 
-					const isTsx = fs.existsSync('resources/scripts/routers/routes.tsx')
-
-					let router = await fs.promises.readFile(isTsx ? 'resources/scripts/routers/routes.tsx' : 'resources/scripts/routers/routes.ts', 'utf-8')
-
-					const importLine = `import ${step.component} from '${step.componentPath}';`
-					if (!router.includes(importLine)) {
-						const lines = router.split('\n')
-						lines.splice(4, 0, importLine)
-						router = lines.join('\n')
-					}
-
-					if (!isTsx) await fs.promises.writeFile('resources/scripts/routers/routes.ts', router)
-					else await fs.promises.writeFile('resources/scripts/routers/routes.tsx', router)
+					const isTsx = fs.existsSync('resources/scripts/routers/routes.tsx'),
+						importLine = `import ${step.component} from '${step.componentPath}';`
 
 					console.log(chalk.gray('Please edit the following file according to the below instructions:'))
 					console.log(chalk.italic.gray('(green lines are added, white lines already exist)'))

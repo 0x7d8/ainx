@@ -9,13 +9,6 @@ export type Args = {
 }
 
 export default async function rebuild(args: Args) {
-	const nodeVersion = parseInt(process.version.split('.')[0].slice(1))
-
-	if (nodeVersion < 16) {
-		console.error(chalk.red('Node version must be 16 or higher'))
-		process.exit(1)
-	}
-
 	const installCmd = cp.spawn('yarn', ['install'], {
 		stdio: 'inherit',
 		cwd: process.cwd()
@@ -62,7 +55,7 @@ export default async function rebuild(args: Args) {
 				for (const file of files) {
 					fs.promises.copyFile(path.join(tmpDir, file), path.join(process.cwd(), 'public', 'assets', file))
 				}
-			}, time(2).s())
+			}, time(1.5).s())
 		}
 
 		await new Promise<void>((resolve, reject) => {
@@ -93,7 +86,7 @@ export default async function rebuild(args: Args) {
 				for (const file of files) {
 					fs.promises.copyFile(path.join(tmpDir, file), path.join(process.cwd(), 'public', 'assets', file))
 				}
-			}, time(2).s())
+			}, time(1.5).s())
 		}
 
 		await new Promise<void>((resolve, reject) => {
