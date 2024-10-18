@@ -28,7 +28,7 @@ export default async function list(args: Args) {
 		console.log(' ', chalk.gray('Identifier:'), chalk.cyan(conf.info.identifier))
 		console.log(' ', chalk.gray('Version:   '), chalk.cyan(conf.info.version))
 		console.log(' ', chalk.gray('Author:    '), chalk.cyan(conf.info.author))
-		if (conf.info.website) console.log('  ', chalk.gray('Website:   '), chalk.cyan(conf.info.website))
+		if (conf.info.website) console.log(' ', chalk.gray('Website:   '), chalk.cyan(conf.info.website))
 
 		const ainxFileStat = await fs.promises.stat(`.blueprint/extensions/${data.id}/${data.id}.ainx`)
 

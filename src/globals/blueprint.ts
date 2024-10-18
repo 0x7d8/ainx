@@ -251,7 +251,9 @@ export async function insertCompatFiles() {
 	}
 
 	await fs.promises.mkdir('resources/views/blueprint/admin/wrappers', { recursive: true }).catch(() => null)
+	await fs.promises.writeFile('resources/views/blueprint/admin/wrappers/.gitkeep', '').catch(() => null)
 	await fs.promises.mkdir('resources/views/blueprint/dashboard/wrappers', { recursive: true }).catch(() => null)
+	await fs.promises.writeFile('resources/views/blueprint/dashboard/wrappers/.gitkeep', '').catch(() => null)
 
 	for (const [ path, content ] of Object.entries(paths)) {
 		const dir = path.split('/').slice(0, -1).join('/')
