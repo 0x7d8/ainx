@@ -299,10 +299,14 @@ export default async function remove(args: Args, skipRoutes: boolean = false) {
 				}
 
 				case "dashboard-route": {
-					if (skipRoutes) break
+					if (skipRoutes) continue
 
-					console.log(chalk.yellow('Remove dashboard route'), chalk.green(step.path), chalk.yellow('...'))
-					console.log(chalk.gray('If you are using a theme you should manually remove the route to prevent automation issues.'))
+					console.log(chalk.yellow('Manual Intervention Required ...'))
+					console.log()
+					console.log(chalk.bold.red('@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@'))
+					console.log(chalk.bold.red('@  PLEASE READ CAREFULLY, DO NOT SKIP  @'))
+					console.log(chalk.bold.red('@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@'))
+					console.log()
 
 					const newRoute = [
 						'        {',
@@ -313,25 +317,35 @@ export default async function remove(args: Args, skipRoutes: boolean = false) {
 						'        },'
 					].join('\n')
 
-					let router: string
-					if (fs.existsSync('resources/scripts/routers/routes.ts')) router = await fs.promises.readFile('resources/scripts/routers/routes.ts', 'utf-8')
-					else router = await fs.promises.readFile('resources/scripts/routers/routes.tsx', 'utf-8')
+					const afterRoute = [
+						'        {',
+						`            path: '${step.after.path}',`,
+						`            name: '${step.after.name}',`,
+						`            permission: '${step.after.permission}',`,
+						`            component: ${step.after.component},`,
+						'        },'
+					].join('\n')
 
-					const importLine = `import ${step.component} from '${step.componentPath}';`
-					if (router.includes(importLine)) {
-						const lines = router.split('\n')
-						router = lines.filter((line) => !line.includes(importLine)).join('\n')
-					}
+					const isTsx = fs.existsSync('resources/scripts/routers/routes.tsx'),
+						importLine = `import ${step.component} from '${step.componentPath}';`
 
-					if (fs.existsSync('resources/scripts/routers/routes.ts')) await fs.promises.writeFile('resources/scripts/routers/routes.ts', router)
-					else await fs.promises.writeFile('resources/scripts/routers/routes.tsx', router)
-
-					console.log(chalk.bold.red('Remove the following route manually in a seperate terminal:'))
-					console.log(chalk.cyan(`${process.cwd()}/resources/scripts/routers/routes.ts`))
-					console.log(chalk.gray('or'), chalk.cyan(`${process.cwd()}/resources/scripts/routers/routes.tsx`))
+					console.log(chalk.gray('Please edit the following file according to the below instructions:'))
+					console.log(chalk.italic.gray('(red lines are removed, white lines already exist)'))
+					console.log(chalk.cyan(`${process.cwd()}/resources/scripts/routers/routes.ts${isTsx ? 'x' : ''}`))
 					console.log()
-					console.log(chalk.gray(newRoute))
+					console.log(chalk.gray('[...]'))
 					console.log()
+					console.log(chalk.white('import DatabasesContainer from \'@/components/server/databases/DatabasesContainer\';'))
+					console.log(chalk.white('import ScheduleContainer from \'@/components/server/schedules/ScheduleContainer\';'))
+					console.log(chalk.bgRedBright.white(importLine))
+					console.log(chalk.white('import UsersContainer from \'@/components/server/users/UsersContainer\';'))
+					console.log()
+					console.log(chalk.gray('[...]'))
+					console.log()
+					console.log(chalk.white(afterRoute))
+					console.log(chalk.bgRedBright.white(newRoute))
+					console.log()
+					console.log(chalk.gray('[...]'))
 
 					const { done } = await enquirer.prompt<{ done: boolean }>({
 						type: 'confirm',

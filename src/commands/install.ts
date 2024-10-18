@@ -471,7 +471,7 @@ export default async function install(args: Args, skipRoutes: boolean = false) {
 				}
 
 				case "dashboard-route": {
-					if (skipRoutes) break
+					if (skipRoutes) continue
 
 					console.log(chalk.yellow('Manual Intervention Required ...'))
 					console.log()

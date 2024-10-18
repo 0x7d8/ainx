@@ -162,7 +162,7 @@ yargs(hideBin(process.argv))
   (rg) => inspect(rg))
   .command('list', 'list installed addons', (yargs) => yargs,
   (rg) => list(rg))
-  .command('info', 'show panel information', (yargs) => yargs,
+  .command('info', 'show general information', (yargs) => yargs,
   (rg) => info(rg))
   .strictCommands()
   .demandCommand(1)

@@ -37,4 +37,33 @@ export default async function inspect(args: Args) {
 	if (conf.info.flags?.length) console.log(seperator, chalk.gray('Flags:      '), chalk.cyan(conf.info.flags?.join(', ')))
 	console.log(seperator, chalk.gray('Size:       '), chalk.cyan(`${(stat.size / 1024).toFixed(2)} KB`))
 	console.log(seperator, chalk.gray('Author:     '), chalk.cyan(conf.info.author))
+
+	const files: string[] = []
+
+	files.push(`.blueprint/extensions/${data.id}`)
+
+	if (conf.admin.controller) files.push(`app/Http/Controllers/Admin/Extensions/${data.id}/${data.id}ExtensionController.php`)
+	files.push(`resources/views/admin/extensions/${data.id}/index.blade.php`)
+
+	if (conf.admin.wrapper) files.push(`resources/views/blueprint/admin/wrappers/${data.id}.blade.php`)
+	if (conf.dashboard?.wrapper) files.push(`resources/views/blueprint/dashboard/wrappers/${data.id}.blade.php`)
+
+	files.push(`routes/admin-${data.id}.php`)
+	if (conf.requests?.routers?.client) files.push(`routes/client-${data.id}.php`)
+	if (conf.requests?.routers?.application) files.push(`routes/application-${data.id}.php`)
+	if (conf.requests?.routers?.web) files.push(`routes/base-${data.id}.php`)
+	if (conf.requests?.app) files.push(`app/BlueprintFramework/Extensions/${data.id}`)
+	if (conf.requests?.views) files.push(`resources/views/blueprint/extensions/${data.id}`)
+
+	if (conf.database?.migrations) files.push(`database/migrations-${data.id}`)
+
+	for (const step of data.installation) {
+		if (step.type === 'copy') files.push(step.destination.replace(process.cwd(), '').slice(1))
+	}
+
+	console.log()
+	console.log(seperator, chalk.gray('Files:'))
+	for (const file of files) {
+		console.log(seperator, ' ', chalk.cyan(file))
+	}
 }
