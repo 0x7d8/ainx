@@ -87,8 +87,6 @@ export default async function install(args: Args, skipRoutes: boolean = false) {
 	if (args.generateFromBlueprint) {
 		console.log(chalk.gray('Generating ainx file from blueprint file ...'))
 
-		file = file.replace('.blueprint', '.ainx')
-
 		const bpZip = new AdmZip(file)
 		const config = blueprint.config(bpZip.readAsText('conf.yml'))
 
@@ -99,8 +97,9 @@ export default async function install(args: Args, skipRoutes: boolean = false) {
 			installation: []
 		})))
 
-		const buffer = await ainxZip.toBufferPromise()
+		file = file.replace('.blueprint', '.ainx')
 
+		const buffer = await ainxZip.toBufferPromise()
 		await fs.promises.writeFile(file, buffer)
 
 		console.log(chalk.gray('Generating ainx file from blueprint file ...'), chalk.bold.green('Done'))

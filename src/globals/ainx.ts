@@ -3,7 +3,6 @@ import { BlueprintConfig } from "src/types/blueprint/conf"
 import AdmZip from "adm-zip"
 import * as blueprint from "src/globals/blueprint"
 import { z } from "zod"
-import { rm } from "fs"
 
 export function parse(file: string | Buffer): [manifest: z.infer<typeof manifest>, blueprint: BlueprintConfig, zip: AdmZip] {
 	const zip = new AdmZip(file)

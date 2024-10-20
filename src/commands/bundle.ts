@@ -177,6 +177,7 @@ export default async function bundle(args: Args) {
 				'',
 			] : [],
 			'(!) STANDALONE:',
+			'For detailed instructions on how to install the addon using ainx, you can visit https://ainx.dev/ainx/addons/installation',
 			'Make sure NodeJS 16+ and Yarn are installed on your system, you can use the install-ainx.sh script to install them.',
 			'To install ainx either run the script or run',
 			'  npm install -g ainx',
