@@ -40,9 +40,9 @@ ainx
   [x] ignorePlaceholders
   [x] forceLegacyPlaceholders
   [x] hasInstallScript
-  [x] hasRemoveScript
+  [x] hasRemovalScript
 [x] $blueprint
-[ ] Artisan Console
+[x] Artisan Console
 [x] Admin
   [x] Views
   [x] CSS

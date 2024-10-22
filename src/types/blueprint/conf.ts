@@ -45,7 +45,8 @@ export const conf = z.object({
 
 	data: z.object({
 		public: z.string().optional(),
-		directory: z.string().optional()
+		directory: z.string().optional(),
+		console: z.string().optional()
 	}).optional(),
 
 	database: z.object({

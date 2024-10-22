@@ -175,6 +175,15 @@ export default async function remove(args: Args, skipRoutes: boolean = false) {
 			}
 		}
 
+		if (conf.data?.console) {
+			console.log(chalk.gray('Removing console files'), chalk.cyan(conf.data.console), chalk.gray('...'))
+
+			await fs.promises.rm(`app/Console/Commands/BlueprintFramework/Extensions/${data.id}`, { recursive: true }).catch(() => null)
+			await fs.promises.rm(`app/BlueprintFramework/Schedules/${data.id}Schedules.php`, { recursive: true }).catch(() => null)
+
+			console.log(chalk.gray('Removing console files'), chalk.cyan(conf.data.console), chalk.gray('...'), chalk.bold.green('Done'))
+		}
+
 		{
 			console.log(chalk.gray('Removing admin routes'), chalk.cyan(`routes/admin-${data.id}.php`), chalk.gray('...'))
 

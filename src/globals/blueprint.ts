@@ -2,62 +2,21 @@ import yaml from "js-yaml"
 import { version as pckgVersion } from "../../package.json"
 import { number, system } from "@rjweb/utils"
 import { BlueprintConfig, conf } from "src/types/blueprint/conf"
+import { consoleConf } from "src/types/blueprint/console"
 import * as fs from "fs"
 import chalk from "chalk"
 import path from "path"
 
-type RawBlueprintConfig = {
-	info: {
-		identifier: string
-		name: string
-		description: string
-		version: string
-		icon?: string
-		target: string
-		flags?: string
-		author?: string
-		website?: string
-	}
-
-	requests?: {
-		views?: string
-		controllers?: string
-		app?: string
-		routers?: {
-			client?: string
-			application?: string
-			web?: string
-		}
-	}
-
-	admin: {
-		view: string
-		controller?: string
-		css?: string
-		wrapper?: string
-	}
-
-	dashboard?: {
-		css?: string
-		wrapper?: string
-		components?: string
-	}
-
-	data?: {
-		public?: string
-		directory?: string
-		console?: string
-	}
-
-	database?: {
-		migrations?: string
-	}
-}
-
 export function config(raw: string) {
-	const data = yaml.load(raw) as RawBlueprintConfig
+	const data = yaml.load(raw)
 
 	return conf.parse(data)
+}
+
+export function consoleConfig(raw: string) {
+	const data = yaml.load(raw)
+
+	return consoleConf.parse(data)
 }
 
 export function environment(conf: BlueprintConfig) {
@@ -68,6 +27,37 @@ export function environment(conf: BlueprintConfig) {
 		EXTENSION_IDENTIFIER: conf.info.identifier,
 		EXTENSION_VERSION: conf.info.version,
 		PTERODACTYL_DIRECTORY: process.cwd()
+	}
+}
+
+export function intervalToCall(data: { Interval?: string }): string | null {
+	if (!data.Interval) return null
+
+	switch (data.Interval) {
+		case "everyMinute": return '->everyMinute()'
+		case "everyTwoMinutes": return '->everyTwoMinutes()'
+		case "everyThreeMinutes": return '->everyThreeMinutes()'
+		case "everyFourMinutes": return '->everyFourMinutes()'
+		case "everyFiveMinutes": return '->everyFiveMinutes()'
+		case "everyTenMinutes": return '->everyTenMinutes()'
+		case "everyFifteenMinutes": return '->everyFifteenMinutes()'
+		case "everyThirtyMinutes": return '->everyThirtyMinutes()'
+		case "hourly": return '->hourly()'
+		case "daily": return '->daily()'
+		case "weekdays": return '->daily()->weekdays()'
+		case "weekends": return '->daily()->weekends()'
+		case "sundays": return '->daily()->sundays()'
+		case "mondays": return '->daily()->mondays()'
+		case "tuesdays": return '->daily()->tuesdays()'
+		case "wednesdays": return '->daily()->wednesdays()'
+		case "thursdays": return '->daily()->thursdays()'
+		case "fridays": return '->daily()->fridays()'
+		case "saturdays": return '->daily()->saturdays()'
+		case "weekly": return '->weekly()'
+		case "monthly": return '->monthly()'
+		case "quarterly": return '->quarterly()'
+		case "yearly": return '->yearly()'
+		default: return `->cron('${data.Interval}')`
 	}
 }
 
@@ -210,6 +200,7 @@ import AssetsBlueprintStyleCss from "src/compat/public/assets/blueprint.style.cs
 import BlueprintAdminLibrary from "src/compat/app/BlueprintFramework/Libraries/ExtensionLibrary/Admin/BlueprintAdminLibrary.php"
 import BlueprintClientLibrary from "src/compat/app/BlueprintFramework/Libraries/ExtensionLibrary/Client/BlueprintClientLibrary.php"
 import BlueprintConsoleLibrary from "src/compat/app/BlueprintFramework/Libraries/ExtensionLibrary/Console/BlueprintConsoleLibrary.php"
+import BlueprintGetExtensionSchedules from "src/compat/app/BlueprintFramework/GetExtensionSchedules.php"
 
 import ScriptLibraryGrabEnv from "src/compat/scripts/libraries/grabenv.sh"
 import ScriptLibraryLogFormat from "src/compat/scripts/libraries/logFormat.sh"
@@ -241,6 +232,7 @@ export async function insertCompatFiles() {
 		'app/BlueprintFramework/Libraries/ExtensionLibrary/Admin/BlueprintAdminLibrary.php': BlueprintAdminLibrary,
 		'app/BlueprintFramework/Libraries/ExtensionLibrary/Client/BlueprintClientLibrary.php': BlueprintClientLibrary,
 		'app/BlueprintFramework/Libraries/ExtensionLibrary/Console/BlueprintConsoleLibrary.php': BlueprintConsoleLibrary,
+		'app/BlueprintFramework/GetExtensionSchedules.php': BlueprintGetExtensionSchedules,
 
 		'scripts/libraries/grabenv.sh': ScriptLibraryGrabEnv,
 		'scripts/libraries/logFormat.sh': ScriptLibraryLogFormat,
@@ -319,6 +311,21 @@ export async function insertCompatFiles() {
 			}
 
 			await fs.promises.writeFile('resources/views/layouts/admin.blade.php', adminLayoutLines.join('\n'))
+		}
+	}
+
+	{
+		const consoleKernel = await fs.promises.readFile('app/Console/Kernel.php', 'utf-8')
+
+		if (!consoleKernel.includes('GetExtensionSchedules')) {
+			const consoleKernelLines = consoleKernel.split('\n'),
+				index = consoleKernelLines.findIndex((line) => line.includes('config(\'activity.prune_days\'))'))
+
+			if (index !== -1) {
+				consoleKernelLines.splice(index + 3, 0, '\n        \\Pterodactyl\\BlueprintFramework\\GetExtensionSchedules::schedules($schedule);')
+			}
+
+			await fs.promises.writeFile('app/Console/Kernel.php', consoleKernelLines.join('\n'))
 		}
 	}
 

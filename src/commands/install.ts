@@ -4,7 +4,7 @@ import enquirer from "enquirer"
 import AdmZip from "adm-zip"
 import { version as pckgVersion } from "../../package.json"
 import path from "path"
-import { filesystem, number, system } from "@rjweb/utils"
+import { filesystem, number, string, system } from "@rjweb/utils"
 import cp from "child_process"
 import rebuild from "src/commands/rebuild"
 import semver from "semver"
@@ -12,6 +12,7 @@ import * as blueprint from "src/globals/blueprint"
 import { intercept } from "src/globals/log"
 import * as ainx from "src/globals/ainx"
 
+import ExtensionCommand from "src/compat/app/Console/Commands/BlueprintFramework/Extensions/ExtensionCommand.php"
 import ExtensionController from "src/compat/app/Http/Controllers/Admin/ExtensionController.php"
 import BladeIndex from "src/compat/resources/views/admin/extensions/index.blade.php"
 import Admin from "src/compat/routes/admin.php"
@@ -223,6 +224,43 @@ export default async function install(args: Args, skipRoutes: boolean = false) {
 			)
 
 			console.log(chalk.gray('Adding admin view'), chalk.cyan(conf.admin.view), chalk.gray('...'), chalk.bold.green('Done'))
+		}
+
+		if (conf.data?.console) {
+			console.log(chalk.gray('Copying console files'), chalk.cyan(conf.data.console), chalk.gray('...'))
+
+			await fs.promises.mkdir(`.blueprint/extensions/${data.id}/console/functions`, { recursive: true })
+			await fs.promises.cp(path.join(source.path(), conf.data.console), path.join(process.cwd(), '.blueprint/extensions', data.id, 'console/functions'), { recursive: true })
+
+			await blueprint.recursivePlaceholders(conf, `.blueprint/extensions/${data.id}/console/functions`)
+
+			if (fs.existsSync(`.blueprint/extensions/${data.id}/console/functions/Console.yml`)) {
+				const config = blueprint.consoleConfig(await fs.promises.readFile(`.blueprint/extensions/${data.id}/console/functions/Console.yml`, 'utf-8'))
+
+				await fs.promises.mkdir(`app/Console/Commands/BlueprintFramework/Extensions/${data.id}`, { recursive: true })
+				await fs.promises.mkdir(`app/BlueprintFramework/Schedules`, { recursive: true })
+
+				let schedules = '<?php\n\n'
+				for (const command of config) {
+					const call = blueprint.intervalToCall(command)
+
+					if (call) {
+						schedules += `$schedule->command('${data.id}:${command.Signature}')${call};\n`
+					}
+
+					const random = string.generate()
+					await fs.promises.writeFile(
+						`app/Console/Commands/BlueprintFramework/Extensions/${data.id}/${random}Command.php`,
+						ExtensionCommand.replace('__random__', random).replaceAll('__identifier__', data.id)
+							.replaceAll('__signature__', command.Signature).replaceAll('__description__', command.Description)
+							.replaceAll('__file__', command.Path)
+					)
+				}
+
+				await fs.promises.writeFile(`app/BlueprintFramework/Schedules/${data.id}Schedules.php`, schedules)
+			}
+
+			console.log(chalk.gray('Copying console files'), chalk.cyan(conf.data.console), chalk.gray('...'), chalk.bold.green('Done'))
 		}
 
 		if (conf.data?.public) {
