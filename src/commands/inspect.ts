@@ -49,9 +49,9 @@ export default async function inspect(args: Args) {
 	if (conf.dashboard?.wrapper) files.push(`resources/views/blueprint/dashboard/wrappers/${data.id}.blade.php`)
 
 	files.push(`routes/admin-${data.id}.php`)
-	if (conf.requests?.routers?.client) files.push(`routes/client-${data.id}.php`)
-	if (conf.requests?.routers?.application) files.push(`routes/application-${data.id}.php`)
-	if (conf.requests?.routers?.web) files.push(`routes/base-${data.id}.php`)
+	if (conf.requests?.routers?.client) files.push(`routes/blueprint/client/${data.id}.php`)
+	if (conf.requests?.routers?.application) files.push(`routes/blueprint/application/${data.id}.php`)
+	if (conf.requests?.routers?.web) files.push(`routes/blueprint/web/${data.id}.php`)
 	if (conf.requests?.app) files.push(`app/BlueprintFramework/Extensions/${data.id}`)
 	if (conf.requests?.views) files.push(`resources/views/blueprint/extensions/${data.id}`)
 

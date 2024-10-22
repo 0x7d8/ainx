@@ -201,6 +201,11 @@ import BlueprintAdminLibrary from "src/compat/app/BlueprintFramework/Libraries/E
 import BlueprintClientLibrary from "src/compat/app/BlueprintFramework/Libraries/ExtensionLibrary/Client/BlueprintClientLibrary.php"
 import BlueprintConsoleLibrary from "src/compat/app/BlueprintFramework/Libraries/ExtensionLibrary/Console/BlueprintConsoleLibrary.php"
 import BlueprintGetExtensionSchedules from "src/compat/app/BlueprintFramework/GetExtensionSchedules.php"
+import ProviderBlueprintRoutes from "src/compat/app/Providers/Blueprint/RouteServiceProvider.php"
+
+import RoutesBlueprintClient from "src/compat/routes/blueprint/client.php"
+import RoutesBlueprintApplication from "src/compat/routes/blueprint/application.php"
+import RoutesBlueprintWeb from "src/compat/routes/blueprint/web.php"
 
 import ScriptLibraryGrabEnv from "src/compat/scripts/libraries/grabenv.sh"
 import ScriptLibraryLogFormat from "src/compat/scripts/libraries/logFormat.sh"
@@ -233,6 +238,11 @@ export async function insertCompatFiles() {
 		'app/BlueprintFramework/Libraries/ExtensionLibrary/Client/BlueprintClientLibrary.php': BlueprintClientLibrary,
 		'app/BlueprintFramework/Libraries/ExtensionLibrary/Console/BlueprintConsoleLibrary.php': BlueprintConsoleLibrary,
 		'app/BlueprintFramework/GetExtensionSchedules.php': BlueprintGetExtensionSchedules,
+		'app/Providers/Blueprint/RouteServiceProvider.php': ProviderBlueprintRoutes,
+
+		'routes/blueprint/client.php': RoutesBlueprintClient,
+		'routes/blueprint/application.php': RoutesBlueprintApplication,
+		'routes/blueprint/web.php': RoutesBlueprintWeb,
 
 		'scripts/libraries/grabenv.sh': ScriptLibraryGrabEnv,
 		'scripts/libraries/logFormat.sh': ScriptLibraryLogFormat,
@@ -246,6 +256,14 @@ export async function insertCompatFiles() {
 	await fs.promises.writeFile('resources/views/blueprint/admin/wrappers/.gitkeep', '').catch(() => null)
 	await fs.promises.mkdir('resources/views/blueprint/dashboard/wrappers', { recursive: true }).catch(() => null)
 	await fs.promises.writeFile('resources/views/blueprint/dashboard/wrappers/.gitkeep', '').catch(() => null)
+	await fs.promises.mkdir('app/BlueprintFramework/Schedules', { recursive: true }).catch(() => null)
+	await fs.promises.writeFile('app/BlueprintFramework/Schedules/.gitkeep', '').catch(() => null)
+	await fs.promises.mkdir('routes/blueprint/client', { recursive: true }).catch(() => null)
+	await fs.promises.writeFile('routes/blueprint/client/.gitkeep', '').catch(() => null)
+	await fs.promises.mkdir('routes/blueprint/application', { recursive: true }).catch(() => null)
+	await fs.promises.writeFile('routes/blueprint/application/.gitkeep', '').catch(() => null)
+	await fs.promises.mkdir('routes/blueprint/web', { recursive: true }).catch(() => null)
+	await fs.promises.writeFile('routes/blueprint/web/.gitkeep', '').catch(() => null)
 
 	for (const [ path, content ] of Object.entries(paths)) {
 		const dir = path.split('/').slice(0, -1).join('/')
@@ -326,6 +344,42 @@ export async function insertCompatFiles() {
 			}
 
 			await fs.promises.writeFile('app/Console/Kernel.php', consoleKernelLines.join('\n'))
+		}
+	}
+
+	{
+		const httpKernel = await fs.promises.readFile('app/Http/Kernel.php', 'utf-8')
+
+		if (!httpKernel.includes('blueprint/api')) {
+			const httpKernelLines = httpKernel.split('\n'),
+				index = httpKernelLines.findIndex((line) => line.includes('protected $middlewareGroups'))
+
+			const data = `
+        'blueprint/api' => [ EnsureStatefulRequests::class, 'auth:sanctum', IsValidJson::class, TrackAPIKey::class, RequireTwoFactorAuthentication::class, AuthenticateIPAccess::class, ],
+        'blueprint/application-api' => [ SubstituteBindings::class, AuthenticateApplicationUser::class, ],
+        'blueprint/client-api' => [ SubstituteClientBindings::class, RequireClientApiKey::class, ],
+			`.trimEnd().concat('\n')
+
+			if (index !== -1) {
+				httpKernelLines.splice(index + 1, 0, data)
+			}
+
+			await fs.promises.writeFile('app/Http/Kernel.php', httpKernelLines.join('\n'))
+		}
+	}
+
+	{
+		const appServiceProvider = await fs.promises.readFile('app/Providers/AppServiceProvider.php', 'utf-8')
+
+		if (!appServiceProvider.includes('RouteServiceProvider::class')) {
+			const appServiceProviderLines = appServiceProvider.split('\n'),
+				index = appServiceProviderLines.findIndex((line) => line.includes('public function register(): void'))
+
+			if (index !== -1) {
+				appServiceProviderLines.splice(index + 2, 0, '\n        $this->app->register(\\Pterodactyl\\Providers\\Blueprint\\RouteServiceProvider::class);')
+			}
+
+			await fs.promises.writeFile('app/Providers/AppServiceProvider.php', appServiceProviderLines.join('\n'))
 		}
 	}
 
