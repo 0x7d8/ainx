@@ -382,6 +382,9 @@ export default async function remove(args: Args, skipRoutes: boolean = false) {
 		}
 
 		try {
+			system.execute('php artisan config:clear')
+			system.execute('php artisan route:clear')
+			system.execute('php artisan cache:clear')
 			system.execute('php artisan optimize')
 		}	catch { }
 

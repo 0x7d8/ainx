@@ -386,7 +386,7 @@ export default async function install(args: Args, skipRoutes: boolean = false) {
 			await fs.promises.cp(path.join(source.path(), conf.requests.routers.client), `.blueprint/extensions/${data.id}/_routers/client.php`)
 
 			await fs.promises.mkdir('routes/blueprint/client', { recursive: true })
-			if (exists(`routes/blueprint/client/${data.id}.php`)) await fs.promises.rm(`routes/blueprint/web/${data.id}.php`, { force: true })
+			if (exists(`routes/blueprint/client/${data.id}.php`)) await fs.promises.rm(`routes/blueprint/client/${data.id}.php`, { force: true })
 			await fs.promises.symlink(path.join(process.cwd(), '.blueprint/extensions', data.id, '_routers', 'client.php'), path.join(process.cwd(), 'routes/blueprint/client', `${data.id}.php`))
 
 			console.log(chalk.gray('Adding client router'), chalk.cyan(`routes/client-${data.id}.php`), chalk.gray('...'), chalk.bold.green('Done'))
@@ -399,7 +399,7 @@ export default async function install(args: Args, skipRoutes: boolean = false) {
 			await fs.promises.cp(path.join(source.path(), conf.requests.routers.application), `.blueprint/extensions/${data.id}/_routers/application.php`)
 
 			await fs.promises.mkdir('routes/blueprint/application', { recursive: true })
-			if (exists(`routes/blueprint/application/${data.id}.php`)) await fs.promises.rm(`routes/blueprint/web/${data.id}.php`, { force: true })
+			if (exists(`routes/blueprint/application/${data.id}.php`)) await fs.promises.rm(`routes/blueprint/application/${data.id}.php`, { force: true })
 			await fs.promises.symlink(path.join(process.cwd(), '.blueprint/extensions', data.id, '_routers', 'application.php'), path.join(process.cwd(), 'routes/blueprint/application', `${data.id}.php`))
 
 			console.log(chalk.gray('Adding application router'), chalk.cyan(`routes/application-${data.id}.php`), chalk.gray('...'), chalk.bold.green('Done'))
@@ -610,6 +610,9 @@ export default async function install(args: Args, skipRoutes: boolean = false) {
 		})
 
 		try {
+			system.execute('php artisan config:clear')
+			system.execute('php artisan route:clear')
+			system.execute('php artisan cache:clear')
 			system.execute('php artisan optimize')
 		}	catch { }
 

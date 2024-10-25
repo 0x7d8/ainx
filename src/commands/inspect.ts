@@ -38,28 +38,28 @@ export default async function inspect(args: Args) {
 	console.log(seperator, chalk.gray('Size:       '), chalk.cyan(`${(stat.size / 1024).toFixed(2)} KB`))
 	console.log(seperator, chalk.gray('Author:     '), chalk.cyan(conf.info.author))
 
-	const files: string[] = []
+	const files = new Set<string>()
 
-	files.push(`.blueprint/extensions/${data.id}`)
+	files.add(`.blueprint/extensions/${data.id}`)
 
-	if (conf.admin.controller) files.push(`app/Http/Controllers/Admin/Extensions/${data.id}/${data.id}ExtensionController.php`)
-	files.push(`resources/views/admin/extensions/${data.id}/index.blade.php`)
+	if (conf.admin.controller) files.add(`app/Http/Controllers/Admin/Extensions/${data.id}/${data.id}ExtensionController.php`)
+	files.add(`resources/views/admin/extensions/${data.id}/index.blade.php`)
 
-	if (conf.admin.wrapper) files.push(`resources/views/blueprint/admin/wrappers/${data.id}.blade.php`)
-	if (conf.dashboard?.wrapper) files.push(`resources/views/blueprint/dashboard/wrappers/${data.id}.blade.php`)
+	if (conf.admin.wrapper) files.add(`resources/views/blueprint/admin/wrappers/${data.id}.blade.php`)
+	if (conf.dashboard?.wrapper) files.add(`resources/views/blueprint/dashboard/wrappers/${data.id}.blade.php`)
 
-	files.push(`routes/admin-${data.id}.php`)
-	if (conf.requests?.routers?.client) files.push(`routes/blueprint/client/${data.id}.php`)
-	if (conf.requests?.routers?.application) files.push(`routes/blueprint/application/${data.id}.php`)
-	if (conf.requests?.routers?.web) files.push(`routes/blueprint/web/${data.id}.php`)
-	if (conf.requests?.app) files.push(`app/BlueprintFramework/Extensions/${data.id}`)
-	if (conf.requests?.views) files.push(`resources/views/blueprint/extensions/${data.id}`)
+	files.add(`routes/admin-${data.id}.php`)
+	if (conf.requests?.routers?.client) files.add(`routes/blueprint/client/${data.id}.php`)
+	if (conf.requests?.routers?.application) files.add(`routes/blueprint/application/${data.id}.php`)
+	if (conf.requests?.routers?.web) files.add(`routes/blueprint/web/${data.id}.php`)
+	if (conf.requests?.app) files.add(`app/BlueprintFramework/Extensions/${data.id}`)
+	if (conf.requests?.views) files.add(`resources/views/blueprint/extensions/${data.id}`)
 
-	if (conf.database?.migrations) files.push(`database/migrations-${data.id}`)
+	if (conf.database?.migrations) files.add(`database/migrations-${data.id}`)
 
 	for (const step of data.installation) {
-		if (step.type === 'copy') files.push(step.destination.replace(process.cwd(), '').slice(1))
-		if (step.type === 'replace') files.push(step.file.replace(process.cwd(), '').slice(1))
+		if (step.type === 'copy') files.add(step.destination.replace(process.cwd(), '').slice(1))
+		if (step.type === 'replace') files.add(step.file.replace(process.cwd(), '').slice(1))
 	}
 
 	console.log()
