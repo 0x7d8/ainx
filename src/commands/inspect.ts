@@ -59,10 +59,11 @@ export default async function inspect(args: Args) {
 
 	for (const step of data.installation) {
 		if (step.type === 'copy') files.push(step.destination.replace(process.cwd(), '').slice(1))
+		if (step.type === 'replace') files.push(step.file.replace(process.cwd(), '').slice(1))
 	}
 
 	console.log()
-	console.log(seperator, chalk.gray('Files:'))
+	console.log(seperator, chalk.gray('Modified Files:'))
 	for (const file of files) {
 		console.log(seperator, ' ', chalk.cyan(file))
 	}
