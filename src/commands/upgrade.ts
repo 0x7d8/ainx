@@ -40,7 +40,7 @@ export default async function upgrade(args: Args, force: boolean = false) {
 			await upgrade({ ...args, files: [file], rebuild: false }, true)
 		}
 
-		await rebuild({ disableSmoothMode: args.disableSmoothMode })
+		if (args.rebuild) await rebuild({ disableSmoothMode: args.disableSmoothMode })
 
 		console.log(chalk.gray('Upgrading'), chalk.cyan(args.files.length), chalk.gray('addons ...'), chalk.bold.green('Done'))
 
