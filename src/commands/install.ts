@@ -382,12 +382,12 @@ export default async function install(args: Args, skipRoutes: boolean = false) {
 		if (conf.requests?.routers?.client && !fs.existsSync(`routes/client-${data.id}.php`)) {
 			console.log(chalk.gray('Adding client router'), chalk.cyan(`routes/client-${data.id}.php`), chalk.gray('...'))
 
-			await fs.promises.mkdir(`.blueprint/extensions/${data.id}/_routers`, { recursive: true })
-			await fs.promises.cp(path.join(source.path(), conf.requests.routers.client), `.blueprint/extensions/${data.id}/_routers/client.php`)
+			const router = blueprint.placeholders(conf, await fs.promises.readFile(path.join(source.path(), conf.requests.routers.client), 'utf-8'))
+			await fs.promises.writeFile(`routes/client-${data.id}.php`, router)
 
-			await fs.promises.mkdir('routes/blueprint/client', { recursive: true })
-			if (exists(`routes/blueprint/client/${data.id}.php`)) await fs.promises.rm(`routes/blueprint/client/${data.id}.php`, { force: true })
-			await fs.promises.symlink(path.join(process.cwd(), '.blueprint/extensions', data.id, '_routers', 'client.php'), path.join(process.cwd(), 'routes/blueprint/client', `${data.id}.php`))
+			if (await fs.promises.readFile(`routes/api-client.php`, 'utf-8').then((content) => !content.includes(`Route::prefix('/extensions/${data.id}')->group(base_path('routes/client-${data.id}.php'));`)).catch(() => true)) {
+				await fs.promises.appendFile('routes/api-client.php', `\nRoute::prefix('/extensions/${data.id}')->group(base_path('routes/client-${data.id}.php'));`)
+			}
 
 			console.log(chalk.gray('Adding client router'), chalk.cyan(`routes/client-${data.id}.php`), chalk.gray('...'), chalk.bold.green('Done'))
 		}
@@ -395,12 +395,12 @@ export default async function install(args: Args, skipRoutes: boolean = false) {
 		if (conf.requests?.routers?.application && !fs.existsSync(`routes/application-${data.id}.php`)) {
 			console.log(chalk.gray('Adding application router'), chalk.cyan(`routes/application-${data.id}.php`), chalk.gray('...'))
 
-			await fs.promises.mkdir(`.blueprint/extensions/${data.id}/_routers`, { recursive: true })
-			await fs.promises.cp(path.join(source.path(), conf.requests.routers.application), `.blueprint/extensions/${data.id}/_routers/application.php`)
+			const router = blueprint.placeholders(conf, await fs.promises.readFile(path.join(source.path(), conf.requests.routers.application), 'utf-8'))
+			await fs.promises.writeFile(`routes/application-${data.id}.php`, router)
 
-			await fs.promises.mkdir('routes/blueprint/application', { recursive: true })
-			if (exists(`routes/blueprint/application/${data.id}.php`)) await fs.promises.rm(`routes/blueprint/application/${data.id}.php`, { force: true })
-			await fs.promises.symlink(path.join(process.cwd(), '.blueprint/extensions', data.id, '_routers', 'application.php'), path.join(process.cwd(), 'routes/blueprint/application', `${data.id}.php`))
+			if (await fs.promises.readFile(`routes/api-application.php`, 'utf-8').then((content) => !content.includes(`Route::prefix('/extensions/${data.id}')->group(base_path('routes/application-${data.id}.php'));`)).catch(() => true)) {
+				await fs.promises.appendFile('routes/api-application.php', `\nRoute::prefix('/extensions/${data.id}')->group(base_path('routes/application-${data.id}.php'));`)
+			}
 
 			console.log(chalk.gray('Adding application router'), chalk.cyan(`routes/application-${data.id}.php`), chalk.gray('...'), chalk.bold.green('Done'))
 		}
@@ -408,17 +408,15 @@ export default async function install(args: Args, skipRoutes: boolean = false) {
 		if (conf.requests?.routers?.web && !fs.existsSync(`routes/base-${data.id}.php`)) {
 			console.log(chalk.gray('Adding base router'), chalk.gray(`routes/base-${data.id}.php`), chalk.gray('...'))
 
-			await fs.promises.mkdir(`.blueprint/extensions/${data.id}/_routers`, { recursive: true })
-			await fs.promises.cp(path.join(source.path(), conf.requests.routers.web), `.blueprint/extensions/${data.id}/_routers/web.php`)
+			const router = blueprint.placeholders(conf, await fs.promises.readFile(path.join(source.path(), conf.requests.routers.web), 'utf-8'))
+			await fs.promises.writeFile(`routes/base-${data.id}.php`, router)
 
-			await fs.promises.mkdir('routes/blueprint/web', { recursive: true })
-			if (exists(`routes/blueprint/web/${data.id}.php`)) await fs.promises.rm(`routes/blueprint/web/${data.id}.php`, { force: true })
-			await fs.promises.symlink(path.join(process.cwd(), '.blueprint/extensions', data.id, '_routers', 'web.php'), path.join(process.cwd(), 'routes/blueprint/web', `${data.id}.php`))
+			if (await fs.promises.readFile(`routes/base.php`, 'utf-8').then((content) => !content.includes(`Route::prefix('/extensions/${data.id}')->group(base_path('routes/base-${data.id}.php'));`)).catch(() => true)) {
+				await fs.promises.appendFile('routes/base.php', `\nRoute::prefix('/extensions/${data.id}')->group(base_path('routes/base-${data.id}.php'));`)
+			}
 
 			console.log(chalk.gray('Adding base router'), chalk.gray(`routes/base-${data.id}.php`), chalk.gray('...'), chalk.bold.green('Done'))
 		}
-
-		if (conf.requests?.routers?.client || conf.requests?.routers?.application || conf.requests?.routers?.web) await blueprint.recursivePlaceholders(conf, `.blueprint/extensions/${data.id}/_routers`)
 
 		const controllerStat = await fs.promises.lstat(`app/BlueprintFramework/Extensions/${data.id}`).catch(() => null)
 		if (controllerStat?.isDirectory() || controllerStat?.isSymbolicLink()) {

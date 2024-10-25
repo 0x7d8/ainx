@@ -201,7 +201,8 @@ export default async function remove(args: Args, skipRoutes: boolean = false) {
 			await Promise.allSettled([
 				fs.promises.rm(`routes/client-${data.id}.php`),
 				fs.promises.rm(`routes/blueprint/client/${data.id}.php`),
-				filesystem.replace('routes/api-client.php', `\ninclude 'client-${data.id}.php';`, '')
+				filesystem.replace('routes/api-client.php', `\ninclude 'client-${data.id}.php';`, ''),
+				filesystem.replace('routes/api-client.php', `\nRoute::prefix('/extensions/${data.id}')->group(base_path('routes/client-${data.id}.php'));`, '')
 			])
 
 			console.log(chalk.gray('Removing client router'), chalk.cyan(`routes/client-${data.id}.php`), chalk.gray('...'), chalk.bold.green('Done'))
@@ -213,7 +214,8 @@ export default async function remove(args: Args, skipRoutes: boolean = false) {
 			await Promise.allSettled([
 				fs.promises.rm(`routes/application-${data.id}.php`),
 				fs.promises.rm(`routes/blueprint/application/${data.id}.php`),
-				filesystem.replace('routes/api-application.php', `\ninclude 'application-${data.id}.php';`, '')
+				filesystem.replace('routes/api-application.php', `\ninclude 'application-${data.id}.php';`, ''),
+				filesystem.replace('routes/api-application.php', `\nRoute::prefix('/extensions/${data.id}')->group(base_path('routes/application-${data.id}.php'));`, '')
 			])
 
 			console.log(chalk.gray('Removing application router'), chalk.cyan(`routes/api-application.php`), chalk.gray('...'), chalk.bold.green('Done'))
@@ -225,7 +227,8 @@ export default async function remove(args: Args, skipRoutes: boolean = false) {
 			await Promise.allSettled([
 				fs.promises.rm(`routes/base-${data.id}.php`),
 				fs.promises.rm(`routes/blueprint/web/${data.id}.php`),
-				filesystem.replace('routes/base.php', `\ninclude 'base-${data.id}.php';`, '')
+				filesystem.replace('routes/base.php', `\ninclude 'base-${data.id}.php';`, ''),
+				filesystem.replace('routes/base.php', `\nRoute::prefix('/extensions/${data.id}')->group(base_path('routes/base-${data.id}.php'));`, '')
 			])
 
 			console.log(chalk.gray('Removing base router'), chalk.cyan(`routes/base-${data.id}.php`), chalk.gray('...'), chalk.bold.green('Done'))
