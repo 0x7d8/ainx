@@ -115,7 +115,8 @@ export default async function upgrade(args: Args, force: boolean = false) {
 		rebuild: args.rebuild,
 		skipSteps: args.skipSteps,
 		generateFromBlueprint: false,
-		disableSmoothMode: args.disableSmoothMode
+		disableSmoothMode: args.disableSmoothMode,
+		applyPermissions: true
 	}, true)
 
 	console.log(chalk.gray('Upgrading ...'), chalk.bold.green('Done'))

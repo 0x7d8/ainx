@@ -211,16 +211,16 @@ import ScriptLibraryLogFormat from "src/compat/scripts/libraries/logFormat.sh"
 import ScriptLibraryParseYaml from "src/compat/scripts/libraries/parse_yaml.sh"
 
 const ainxAddonsRoutes = `
-                        <li class="header">AINX ADDONS</li>
-                        @foreach (File::allFiles(base_path('resources/views/admin/extensions')) as $partial)
-                            @if ($partial->getExtension() == 'php')
-                                <li class="{{ ! starts_with(Route::currentRouteName(), 'admin.extensions.'.basename(dirname(strstr($partial->getPathname(), "extensions/"))).'.index') ?: 'active' }}">
-                                    <a href="{{ route('admin.extensions.'.basename(dirname(strstr($partial->getPathname(), "extensions/"))).'.index') }}">
-                                        <i class="fa fa-puzzle-piece"></i> <span>{{ basename(dirname(strstr($partial->getPathname(), "extensions/"))) }}</span>
-                                    </a>
-                                </li>
-                            @endif
-                        @endforeach
+                            <li class="header">AINX ADDONS</li>
+                            @foreach (File::allFiles(base_path('resources/views/admin/extensions')) as $partial)
+                                @if ($partial->getExtension() == 'php')
+                                    <li class="{{ ! starts_with(Route::currentRouteName(), 'admin.extensions.'.basename(dirname(strstr($partial->getPathname(), "extensions/"))).'.index') ?: 'active' }}">
+                                        <a href="{{ route('admin.extensions.'.basename(dirname(strstr($partial->getPathname(), "extensions/"))).'.index') }}">
+                                            <i class="fa fa-puzzle-piece"></i> <span>{{ basename(dirname(strstr($partial->getPathname(), "extensions/"))) }}</span>
+                                        </a>
+                                    </li>
+                                @endif
+                            @endforeach
 `.split('\n').slice(1, -1).join('\n')
 
 export async function insertCompatFiles() {

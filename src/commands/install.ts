@@ -1,5 +1,6 @@
 import chalk from "chalk"
 import fs from "fs"
+import os from "os"
 import enquirer from "enquirer"
 import AdmZip from "adm-zip"
 import { version as pckgVersion } from "../../package.json"
@@ -24,6 +25,7 @@ export type Args = {
 	skipSteps: boolean
 	generateFromBlueprint: boolean
 	disableSmoothMode: boolean
+	applyPermissions: boolean
 }
 
 function exists(file: string): boolean {
@@ -166,7 +168,7 @@ export default async function install(args: Args, skipRoutes: boolean = false) {
 		console.log(chalk.gray('Installing'), chalk.cyan(data.id), chalk.gray('...'))
 		console.log()
 
-		const source = ainx.unpack(zip, '/tmp/ainx/addon')
+		const source = ainx.unpack(zip, path.join(os.tmpdir(), 'ainx', 'addon'))
 
 		console.log(chalk.gray('Addon Name:'), chalk.cyan(conf.info.name))
 		console.log(chalk.gray('Addon Version:'), chalk.cyan(conf.info.version))
@@ -372,7 +374,9 @@ export default async function install(args: Args, skipRoutes: boolean = false) {
 		{
 			console.log(chalk.gray('Adding admin router'), chalk.cyan(data.id), chalk.gray('...'))
 
-			await fs.promises.appendFile('routes/admin.php', `\ninclude 'admin-${data.id}.php';`)
+			if (await fs.promises.readFile('routes/admin.php', 'utf-8').then((content) => !content.includes(`include 'admin-${data.id}.php';`)).catch(() => true)) {
+				await fs.promises.appendFile('routes/admin.php', `\ninclude 'admin-${data.id}.php';`)
+			}
 
 			await fs.promises.writeFile(`routes/admin-${data.id}.php`, Admin.replaceAll('__identifier__', data.id))
 
@@ -615,7 +619,7 @@ export default async function install(args: Args, skipRoutes: boolean = false) {
 		}	catch { }
 
 		await blueprint.updateBlueprintCache()
-		await blueprint.applyPermissions()
+		if (args.applyPermissions) await blueprint.applyPermissions()
 
 		if (!fs.existsSync(`.blueprint/extensions/${data.id}`)) await fs.promises.mkdir(`.blueprint/extensions/${data.id}`, { recursive: true })
 		await fs.promises.cp(file, `.blueprint/extensions/${data.id}/${data.id}.ainx`)

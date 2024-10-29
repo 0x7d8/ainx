@@ -4,9 +4,12 @@ import AdmZip from "adm-zip"
 import { manifest } from "src/types/manifest"
 import * as blueprint from "src/globals/blueprint"
 import semver from "semver"
+import genpatch from "src/commands/genpatch"
 
 export type Args = {
 	ainx: boolean
+	patches: boolean
+	remote: string
 }
 
 export default async function bundle(args: Args) {
@@ -176,6 +179,9 @@ export default async function bundle(args: Args) {
 				`  bash ${data.data.hasRemove}`,
 				'',
 			] : [],
+			'(i) Patch-based Installation:',
+			'For detailed instructions on how to install the addon using a patch, visit https://ainx.dev/ainx/addons/patches',
+			'',
 			'(!) STANDALONE:',
 			'For detailed instructions on how to install the addon using ainx, you can visit https://ainx.dev/ainx/addons/installation',
 			'Make sure NodeJS 16+ and Yarn are installed on your system, you can use the install-ainx.sh script to install them.',
@@ -228,6 +234,24 @@ export default async function bundle(args: Args) {
 				await fs.promises.readFile('README.txt', 'utf-8')
 			] : []
 		].join('\n').trim()))
+
+		if (args.patches) {
+			await ainx.writeZipPromise(`${data.data.id}__tmp.ainx`)
+
+			await genpatch({ file: `${data.data.id}__tmp.ainx`, skipSteps: true, includeCompat: true, skipRoutes: true, outfile: `${data.data.id}-withcompat.patch`, remote: args.remote }, true)
+			await genpatch({ file: `${data.data.id}__tmp.ainx`, skipSteps: true, includeCompat: false, skipRoutes: true, outfile: `${data.data.id}-withoutcompat.patch`, remote: args.remote }, true)
+
+			await fs.promises.rm(`${data.data.id}__tmp.ainx`, { force: true })
+
+			const withCompat = await fs.promises.readFile(`${data.data.id}-withcompat.patch`),
+				withoutCompat = await fs.promises.readFile(`${data.data.id}-withoutcompat.patch`)
+
+			await fs.promises.rm(`${data.data.id}-withcompat.patch`, { force: true })
+			await fs.promises.rm(`${data.data.id}-withoutcompat.patch`, { force: true })
+
+			zip.addFile(`${data.data.id}-withcompat.patch`, withCompat)
+			zip.addFile(`${data.data.id}-withoutcompat.patch`, withoutCompat)
+		}
 
 		await zip.writeZipPromise(`${data.data.id}-v${conf.info.version.replaceAll('.', '')}.zip`)
 	} else {

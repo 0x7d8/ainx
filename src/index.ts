@@ -10,6 +10,7 @@ import upgrade from "src/commands/upgrade"
 import bundle from "src/commands/bundle"
 import rebuild from "src/commands/rebuild"
 import inspect from "src/commands/inspect"
+import genpatch from "src/commands/genpatch"
 import list from "src/commands/list"
 import info from "src/commands/info"
 
@@ -71,6 +72,12 @@ yargs(hideBin(process.argv))
       type: 'boolean',
       description: 'disable smooth build mode, try this if you have issues with rebuilding',
       default: false
+    })
+    .option('applyPermissions', {
+      alias: 'aP',
+      type: 'boolean',
+      description: 'apply permissions to files for the pterodactyl webserver',
+      default: true
     }),
   (rg) => install(rg))
   .command('remove [addons..]', 'remove an addon', (yargs) => yargs
@@ -143,6 +150,18 @@ yargs(hideBin(process.argv))
       type: 'boolean',
       description: 'only create an ainx file',
       default: false
+    })
+    .option('patches', {
+      alias: 'p',
+      type: 'boolean',
+      description: 'create patches for the addon',
+      default: false
+    })
+    .option('remote', {
+      alias: 'r',
+      type: 'string',
+      description: 'remote url or local path to compare against for patches',
+      default: 'https://github.com/pterodactyl/panel/releases/latest/download/panel.tar.gz'
     }),
   (rg) => bundle(rg))
   .command('rebuild', 'rebuild panel ui', (yargs) => yargs
@@ -160,6 +179,46 @@ yargs(hideBin(process.argv))
       description: 'the file to inspect'
     }),
   (rg) => inspect(rg))
+  .command('genpatch <file>', 'generate a patch', (yargs) => yargs
+    .positional('file', {
+      demandOption: true,
+      type: 'string',
+      description: 'the file to generate a patch for'
+    })
+    .option('outfile', {
+      alias: 'o',
+      type: 'string',
+      description: 'output file for the patch'
+    })
+    .option('old', {
+      type: 'string',
+      description: 'old file to compare against, useful for upgrades'
+    })
+    .option('skipSteps', {
+      alias: 's',
+      type: 'boolean',
+      description: 'skip ainx metadata installation steps',
+      default: false
+    })
+    .option('remote', {
+      alias: 'r',
+      type: 'string',
+      description: 'remote url or local path to compare against',
+      default: 'https://github.com/pterodactyl/panel/releases/latest/download/panel.tar.gz'
+    })
+    .option('includeCompat', {
+      alias: 'iC',
+      type: 'boolean',
+      description: 'include compatibility files for blueprint, you will need to do this at least once, HIGHLY IMPORTANT',
+      default: false
+    })
+    .option('skipRoutes', {
+      alias: 'sR',
+      type: 'boolean',
+      description: 'skip manual frontend route insertion, generally recommended for more compatible patches',
+      default: false
+    }),
+  (rg) => genpatch(rg))
   .command('list', 'list installed addons', (yargs) => yargs,
   (rg) => list(rg))
   .command('info', 'show general information', (yargs) => yargs,
