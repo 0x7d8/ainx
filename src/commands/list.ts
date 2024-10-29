@@ -5,10 +5,10 @@ import * as ainx from "src/globals/ainx"
 
 export type Args = {}
 
-export default async function list(args: Args) {
+export default async function list(args: Args): Promise<number> {
 	if (!fs.existsSync('.blueprint/extensions')) {
 		console.error(chalk.red('No addons installed'))
-		process.exit(1)
+		return 1
 	}
 
 	const files = await fs.promises.readdir('.blueprint/extensions'),
@@ -20,7 +20,7 @@ export default async function list(args: Args) {
 
 	if (!addons.length) {
 		console.error(chalk.red('No addons installed'))
-		process.exit(1)
+		return 1
 	}
 
 	for (const [ data, conf ] of addons.sort((a, b) => a[1].info.name.localeCompare(b[1].info.name))) {
@@ -36,4 +36,6 @@ export default async function list(args: Args) {
 		console.log(' ', chalk.gray('Size:      '), chalk.cyan(`${(ainxFileStat.size / 1024).toFixed(2)} KB`))
 		console.log()
 	}
+
+	return 0
 }

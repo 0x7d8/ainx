@@ -18,10 +18,10 @@ export type Args = {
 	disableSmoothMode: boolean
 }
 
-export default async function remove(args: Args, skipRoutes: boolean = false) {
+export default async function remove(args: Args, skipRoutes: boolean = false): Promise<number> {
 	if (!args.addons.length) {
 		console.error(chalk.red('No addons provided'))
-		process.exit(1)
+		return 1
 	}
 
 	if (args.addons.length !== 1) {
@@ -33,7 +33,7 @@ export default async function remove(args: Args, skipRoutes: boolean = false) {
 
 		if (!confirm) {
 			console.log(chalk.yellow('Cancelled'))
-			process.exit(0)
+			return 0
 		}
 
 		console.log(chalk.gray('Removing'), chalk.cyan(args.addons.length), chalk.gray('addons ...'))
@@ -46,7 +46,7 @@ export default async function remove(args: Args, skipRoutes: boolean = false) {
 
 		console.log(chalk.gray('Removing'), chalk.cyan(args.addons.length), chalk.gray('addons ...'), chalk.bold.green('Done'))
 
-		return
+		return 0
 	}
 
 	let addon = args.addons[0].replace('.ainx', '')
@@ -55,19 +55,19 @@ export default async function remove(args: Args, skipRoutes: boolean = false) {
 	if (!yarn) {
 		console.error(chalk.red('Yarn is required to remove addons'))
 		console.error(chalk.gray('Install yarn using:'), chalk.cyan('npm i -g yarn'))
-		process.exit(1)
+		return 1
 	}
 
 	if (!fs.existsSync('yarn.lock')) {
 		console.error(chalk.red('Yarn lock file not found'))
 		console.error(chalk.red('Please navigate to the pterodactyl panel root directory before running ainx.'))
 		console.error(chalk.gray('Example:'), chalk.cyan('cd /var/www/pterodactyl'))
-		process.exit(1)
+		return 1
 	}
 
 	if (!fs.existsSync(`.blueprint/extensions/${addon}`)) {
 		console.error(chalk.red('Addon is not installed'))
-		process.exit(1)
+		return 1
 	}
 
 	const log = intercept()
@@ -76,7 +76,7 @@ export default async function remove(args: Args, skipRoutes: boolean = false) {
 		const [ data, conf, zip ] = ainx.parse(`.blueprint/extensions/${addon}/${addon}.ainx`)
 		if (!zip.test()) {
 			console.error(chalk.red('Invalid ainx file'))
-			process.exit(1)
+			return 1
 		}
 
 		if (!args.force) {
@@ -88,7 +88,7 @@ export default async function remove(args: Args, skipRoutes: boolean = false) {
 
 			if (!confirm) {
 				console.log(chalk.yellow('Cancelled'))
-				process.exit(0)
+				return 0
 			}
 		}
 
@@ -373,7 +373,7 @@ export default async function remove(args: Args, skipRoutes: boolean = false) {
 
 					if (!done) {
 						console.log(chalk.yellow('Cancelled'))
-						process.exit(1)
+						return 1
 					}
 
 					break
@@ -408,8 +408,10 @@ export default async function remove(args: Args, skipRoutes: boolean = false) {
 
 		if (!args.force) await log.ask()
 
-		process.exit(1)
+		return 1
 	} finally {
 		await fs.promises.rm('/tmp/ainx/addon', { recursive: true, force: true })
 	}
+
+	return 0
 }

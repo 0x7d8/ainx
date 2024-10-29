@@ -8,6 +8,7 @@ import path from "path"
 import { filesystem, number, string, system } from "@rjweb/utils"
 import cp from "child_process"
 import rebuild from "src/commands/rebuild"
+import backupCreate from "src/commands/backup/create"
 import semver from "semver"
 import * as blueprint from "src/globals/blueprint"
 import { intercept } from "src/globals/log"
@@ -38,10 +39,14 @@ function exists(file: string): boolean {
 	}
 }
 
-export default async function install(args: Args, skipRoutes: boolean = false) {
+export default async function install(args: Args, skipRoutes: boolean = false): Promise<number> {
 	if (!args.files.length) {
 		console.error(chalk.red('No files provided'))
-		process.exit(1)
+		return 1
+	}
+
+	if (!args.force) {
+		await backupCreate({})
 	}
 
 	if (args.files.length !== 1) {
@@ -53,7 +58,7 @@ export default async function install(args: Args, skipRoutes: boolean = false) {
 
 		if (!confirm) {
 			console.log(chalk.yellow('Cancelled'))
-			process.exit(0)
+			return 0
 		}
 
 		console.log(chalk.gray('Installing'), chalk.cyan(args.files.length), chalk.gray('addons ...'))
@@ -66,33 +71,33 @@ export default async function install(args: Args, skipRoutes: boolean = false) {
 
 		console.log(chalk.gray('Installing'), chalk.cyan(args.files.length), chalk.gray('addons ...'), chalk.bold.green('Done'))
 
-		return
+		return 0
 	}
 
 	let file = args.files[0]
 
 	if (args.generateFromBlueprint ? !file.endsWith('.blueprint') : !file.endsWith('.ainx')) {
 		console.error(chalk.red('Invalid file type, file must end in'), chalk.cyan(args.generateFromBlueprint ? '.blueprint' : '.ainx'))
-		process.exit(1)
+		return 1
 	}
 
 	if (!fs.existsSync(file)) {
 		console.error(chalk.red('File does not exist'))
-		process.exit(1)
+		return 1
 	}
 
 	const yarn = await system.execute('yarn --version', { async: true }).catch(() => null)
 	if (!yarn) {
 		console.error(chalk.red('Yarn is required to install addons'))
 		console.error(chalk.gray('Install yarn using:'), chalk.cyan('npm i -g yarn'))
-		process.exit(1)
+		return 1
 	}
 
 	if (!fs.existsSync('yarn.lock')) {
 		console.error(chalk.red('Yarn lock file not found'))
 		console.error(chalk.red('Please navigate to the pterodactyl panel root directory before running ainx.'))
 		console.error(chalk.gray('Example:'), chalk.cyan('cd /var/www/pterodactyl'))
-		process.exit(1)
+		return 1
 	}
 
 	const log = intercept()
@@ -127,7 +132,7 @@ export default async function install(args: Args, skipRoutes: boolean = false) {
 		const [ data, conf, zip ] = ainx.parse(file)
 		if (!zip.test()) {
 			console.error(chalk.red('Invalid ainx file'))
-			process.exit(1)
+			return 1
 		}
 
 		if (semver.gt(data.ainxRequirement, pckgVersion)) {
@@ -137,7 +142,7 @@ export default async function install(args: Args, skipRoutes: boolean = false) {
 			console.log(chalk.gray('Update using:'))
 			console.log(chalk.cyan('npm i -g ainx@latest'))
 
-			process.exit(1)
+			return 1
 		}
 
 		if (data.hasRemove && fs.existsSync(data.hasRemove)) {
@@ -147,7 +152,7 @@ export default async function install(args: Args, skipRoutes: boolean = false) {
 
 		if (exists(`.blueprint/extensions/${data.id}/${data.id}.ainx`) && !args.force) {
 			console.error(chalk.red('Addon already installed, upgrade instead'))
-			process.exit(1)
+			return 1
 		}
 
 		if (!args.force) {
@@ -159,7 +164,7 @@ export default async function install(args: Args, skipRoutes: boolean = false) {
 
 			if (!confirm) {
 				console.log(chalk.yellow('Cancelled'))
-				process.exit(0)
+				return 0
 			}
 		}
 
@@ -583,7 +588,7 @@ export default async function install(args: Args, skipRoutes: boolean = false) {
 
 					if (!done) {
 						console.log(chalk.yellow('Cancelled, apply the route and run this command again.'))
-						process.exit(1)
+						return 1
 					}
 
 					break
@@ -638,8 +643,10 @@ export default async function install(args: Args, skipRoutes: boolean = false) {
 
 		if (!args.force) await log.ask()
 
-		process.exit(1)
+		return 1
 	} finally {
 		await fs.promises.rm('/tmp/ainx/addon', { recursive: true, force: true })
 	}
+
+	return 0
 }

@@ -5,7 +5,7 @@ import { filesystem } from "@rjweb/utils"
 
 export type Args = {}
 
-export default async function info(args: Args) {
+export default async function info(args: Args): Promise<number> {
 	const files = await fs.promises.readdir('.blueprint/extensions').catch(() => []),
 		addons = await Promise.all(files.map(async(file) => {
 			const ainxFile = await fs.promises.readFile(path.join('.blueprint/extensions', file, `${file}.ainx`)).catch(() => null)
@@ -22,4 +22,6 @@ export default async function info(args: Args) {
 	if (env?.PTERODACTYL_TELEMETRY_ENABLED) console.log(seperator, chalk.gray('Telemetry:  '), chalk.cyan(env.PTERODACTYL_TELEMETRY_ENABLED))
 	if (env?.APP_LOCALE) console.log(seperator, chalk.gray('Locale:     '), chalk.cyan(env.APP_LOCALE))
 	if (addons.length) console.log(seperator, chalk.gray('Addons:     '), chalk.cyan(addons.length))
+
+	return 0
 }

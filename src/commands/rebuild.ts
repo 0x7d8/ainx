@@ -8,7 +8,7 @@ export type Args = {
 	disableSmoothMode: boolean
 }
 
-export default async function rebuild(args: Args) {
+export default async function rebuild(args: Args): Promise<number> {
 	const installCmd = cp.spawn('yarn', ['install'], {
 		stdio: 'inherit',
 		cwd: process.cwd()
@@ -111,4 +111,6 @@ export default async function rebuild(args: Args) {
 
 	console.log()
 	console.log(chalk.gray('Rebuilding assets ...'), chalk.bold.green('Done'))
+
+	return 0
 }

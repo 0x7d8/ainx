@@ -6,21 +6,21 @@ export type Args = {
 	file: string
 }
 
-export default async function inspect(args: Args) {
+export default async function inspect(args: Args): Promise<number> {
 	if (!args.file.endsWith('.ainx')) {
 		console.error(chalk.red('Invalid file type, file must end in'), chalk.cyan('.ainx'))
-		process.exit(1)
+		return 1
 	}
 
 	if (!fs.existsSync(args.file)) {
 		console.error(chalk.red('File does not exist'))
-		process.exit(1)
+		return 1
 	}
 
 	const [ data, conf, zip ] = ainx.parse(args.file)
 	if (!zip.test()) {
 		console.error(chalk.red('Invalid ainx file'))
-		process.exit(1)
+		return 1
 	}
 
 	const seperator = '       ',
@@ -67,4 +67,6 @@ export default async function inspect(args: Args) {
 	for (const file of files) {
 		console.log(seperator, ' ', chalk.cyan(file))
 	}
+
+	return 0
 }

@@ -12,7 +12,7 @@ export type Args = {
 	remote: string
 }
 
-export default async function bundle(args: Args) {
+export default async function bundle(args: Args): Promise<number> {
 	console.log(chalk.gray('Bundling Addon ...'))
 
 	const include: string[] = [],
@@ -25,19 +25,19 @@ export default async function bundle(args: Args) {
 
 	if (!files.includes('manifest.json')) {
 		console.error(chalk.red('Manifest file not found'))
-		process.exit(1)
+		return 1
 	}
 
 	const data = manifest.safeParse(JSON.parse(await fs.promises.readFile('manifest.json', 'utf-8')))
 	if (!data.success) {
 		console.error(chalk.red('Invalid ainx manifest'))
-		process.exit(1)
+		return 1
 	}
 
 	const blueprintZip = files.includes(`${data.data.id}.blueprint`) ? `${data.data.id}.blueprint` : files.find((file) => file.endsWith('.blueprint'))
 	if (!blueprintZip) {
 		console.error(chalk.red('Blueprint file not found'))
-		process.exit(1)
+		return 1
 	}
 
 	const bpZip = new AdmZip(blueprintZip),
@@ -182,6 +182,12 @@ export default async function bundle(args: Args) {
 			'(i) Patch-based Installation:',
 			'For detailed instructions on how to install the addon using a patch, visit https://ainx.dev/ainx/addons/patches',
 			'',
+			'(!) How to install the addon after updating the panel:',
+			'If you have updated the panel and need to reinstall the addon, you can use the following command',
+			`  ainx install ${data.data.id}.ainx --force`,
+			'To reinstall all addons at once you can use',
+			'  ainx install *.ainx --force',
+			'',
 			'(!) STANDALONE:',
 			'For detailed instructions on how to install the addon using ainx, you can visit https://ainx.dev/ainx/addons/installation',
 			'Make sure NodeJS 16+ and Yarn are installed on your system, you can use the install-ainx.sh script to install them.',
@@ -268,4 +274,6 @@ export default async function bundle(args: Args) {
 	console.log()
 	console.log(chalk.gray('Addon:'), chalk.cyan(conf.info.name))
 	console.log(chalk.gray('Version:'), chalk.cyan(conf.info.version))
+
+	return 0
 }

@@ -16,10 +16,10 @@ export type Args = {
 	disableSmoothMode: boolean
 }
 
-export default async function upgrade(args: Args, force: boolean = false) {
+export default async function upgrade(args: Args, force: boolean = false): Promise<number> {
 	if (!args.files.length) {
 		console.error(chalk.red('No files provided'))
-		process.exit(1)
+		return 1
 	}
 
 	if (args.files.length !== 1) {
@@ -31,7 +31,7 @@ export default async function upgrade(args: Args, force: boolean = false) {
 
 		if (!confirm) {
 			console.log(chalk.yellow('Cancelled'))
-			process.exit(0)
+			return 0
 		}
 
 		console.log(chalk.gray('Upgrading'), chalk.cyan(args.files.length), chalk.gray('addons ...'))
@@ -44,30 +44,30 @@ export default async function upgrade(args: Args, force: boolean = false) {
 
 		console.log(chalk.gray('Upgrading'), chalk.cyan(args.files.length), chalk.gray('addons ...'), chalk.bold.green('Done'))
 
-		return
+		return 0
 	}
 
 	const file = args.files[0]
 
 	if (!file.endsWith('.ainx')) {
 		console.error(chalk.red('Invalid file type, file must end in'), chalk.cyan('.ainx'))
-		process.exit(1)
+		return 1
 	}
 
 	if (!fs.existsSync(`.blueprint/extensions/${file.replace('.ainx', '')}/${file}`)) {
 		console.error(chalk.red('Addon is not (properly) installed, install instead'))
-		process.exit(1)
+		return 1
 	}
 
 	if (!fs.existsSync(file)) {
 		console.error(chalk.red('File does not exist'))
-		process.exit(1)
+		return 1
 	}
 
 	const [ data, conf, zip ] = ainx.parse(file)
 	if (!zip.test()) {
 		console.error(chalk.red('Invalid ainx file'))
-		process.exit(1)
+		return 1
 	}
 
 	if (semver.gt(data.ainxRequirement, pckgVersion)) {
@@ -77,7 +77,7 @@ export default async function upgrade(args: Args, force: boolean = false) {
 		console.log(chalk.gray('Update using:'))
 		console.log(chalk.cyan('npm i -g ainx@latest'))
 
-		process.exit(1)
+		return 1
 	}
 
 	if (!force) {
@@ -89,7 +89,7 @@ export default async function upgrade(args: Args, force: boolean = false) {
 
 		if (!confirm) {
 			console.log(chalk.yellow('Cancelled'))
-			process.exit(0)
+			return 0
 		}
 	}
 
@@ -123,4 +123,6 @@ export default async function upgrade(args: Args, force: boolean = false) {
 	console.log(chalk.italic.gray(`Took ${Date.now() - start}ms`))
 
 	if (!force) await log.ask()
+
+	return 0
 }

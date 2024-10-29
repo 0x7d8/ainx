@@ -11,6 +11,8 @@ import bundle from "src/commands/bundle"
 import rebuild from "src/commands/rebuild"
 import inspect from "src/commands/inspect"
 import genpatch from "src/commands/genpatch"
+import backupCreate from "src/commands/backup/create"
+import backupRestore from "src/commands/backup/restore"
 import list from "src/commands/list"
 import info from "src/commands/info"
 
@@ -39,7 +41,7 @@ yargs(hideBin(process.argv))
     .positional('files', {
       demandOption: true,
       type: 'string',
-      description: 'the file to install',
+      description: 'the file(s) to install',
       array: true
     })
     .option('force', {
@@ -79,12 +81,12 @@ yargs(hideBin(process.argv))
       description: 'apply permissions to files for the pterodactyl webserver',
       default: true
     }),
-  (rg) => install(rg))
+  (rg) => install(rg).then(process.exit))
   .command('remove [addons..]', 'remove an addon', (yargs) => yargs
     .positional('addons', {
       demandOption: true,
       type: 'string',
-      description: 'the addon to remove',
+      description: 'the addon(s) to remove',
       array: true
     })
     .option('force', {
@@ -117,12 +119,12 @@ yargs(hideBin(process.argv))
       description: 'disable smooth build mode, try this if you have issues with rebuilding',
       default: false
     }),
-  (rg) => remove(rg))
+  (rg) => remove(rg).then(process.exit))
   .command('upgrade [files..]', 'upgrade an addon', (yargs) => yargs
     .positional('files', {
       demandOption: true,
       type: 'string',
-      description: 'the file to use to upgrade',
+      description: 'the file(s) to use for upgrading',
       array: true
     })
     .option('skipSteps', {
@@ -143,7 +145,7 @@ yargs(hideBin(process.argv))
       description: 'disable smooth build mode, try this if you have issues with rebuilding',
       default: false
     }),
-  (rg) => upgrade(rg))
+  (rg) => upgrade(rg).then(process.exit))
   .command('bundle', 'bundle an addon', (yargs) => yargs
     .option('ainx', {
       alias: 'a',
@@ -163,22 +165,22 @@ yargs(hideBin(process.argv))
       description: 'remote url or local path to compare against for patches',
       default: 'https://github.com/pterodactyl/panel/releases/latest/download/panel.tar.gz'
     }),
-  (rg) => bundle(rg))
-  .command('rebuild', 'rebuild panel ui', (yargs) => yargs
+  (rg) => bundle(rg).then(process.exit))
+  .command('rebuild', 'rebuild the panel frontend', (yargs) => yargs
     .option('disableSmoothMode', {
       alias: 'dSM',
       type: 'boolean',
       description: 'disable smooth build mode, try this if you have issues with rebuilding',
       default: false
     }),
-  (rg) => rebuild(rg))
+  (rg) => rebuild(rg).then(process.exit))
   .command('inspect <file>', 'inspect an addon', (yargs) => yargs
     .positional('file', {
       demandOption: true,
       type: 'string',
       description: 'the file to inspect'
     }),
-  (rg) => inspect(rg))
+  (rg) => inspect(rg).then(process.exit))
   .command('genpatch <file>', 'generate a patch', (yargs) => yargs
     .positional('file', {
       demandOption: true,
@@ -218,11 +220,19 @@ yargs(hideBin(process.argv))
       description: 'skip manual frontend route insertion, generally recommended for more compatible patches',
       default: false
     }),
-  (rg) => genpatch(rg))
+  (rg) => genpatch(rg).then(process.exit))
+  .command('backup', 'backup commands', (yargs) => yargs
+    .command('create', 'create a panel backup', (yargs) => yargs,
+    (rg) => backupCreate(rg).then(process.exit))
+    .command('restore', 'restore a panel backup', (yargs) => yargs,
+    (rg) => backupRestore(rg).then(process.exit))
+    .strictCommands()
+    .demandCommand(1)
+  )
   .command('list', 'list installed addons', (yargs) => yargs,
-  (rg) => list(rg))
+  (rg) => list(rg).then(process.exit))
   .command('info', 'show general information', (yargs) => yargs,
-  (rg) => info(rg))
+  (rg) => info(rg).then(process.exit))
   .strictCommands()
   .demandCommand(1)
   .parse()
