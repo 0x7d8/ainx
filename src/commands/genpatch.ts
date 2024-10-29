@@ -135,11 +135,10 @@ export default async function genpatch(args: Args, force = false) {
 		process.chdir(tmpDir)
 
 		const git = simpleGit(tmpDir)
+		await git.init()
 
 		await git.addConfig('user.email', 'ainx@ainx.dev')
 		await git.addConfig('user.name', 'ainx')
-
-		await git.init()
 
 		if (!args.includeCompat) {
 			await blueprint.insertCompatFiles()
