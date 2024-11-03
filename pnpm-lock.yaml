@@ -18,8 +18,8 @@ importers:
         specifier: ^4.0.9
         version: 4.0.9
       '@types/node':
-        specifier: ^16.18.115
-        version: 16.18.115
+        specifier: ^16.18.118
+        version: 16.18.118
       '@types/semver':
         specifier: ^7.5.8
         version: 7.5.8
@@ -133,8 +133,8 @@ packages:
   '@types/js-yaml@4.0.9':
     resolution: {integrity: sha512-k4MGaQl5TGo/iipqb2UDG2UwjXziSWkh0uysQelTlJpX1qGlpUZYm8PnO4DxG1qBomtJUdYJ6qR6xdIah10JLg==}
 
-  '@types/node@16.18.115':
-    resolution: {integrity: sha512-NF5ajYn+dq0tRfswdyp8Df75h7D9z+L8TCIwrXoh46ZLK6KZVXkRhf/luXaZytvm/keUo9vU4m1Bg39St91a5w==}
+  '@types/node@16.18.118':
+    resolution: {integrity: sha512-YgPbVGrf+mL4Qp8KTcd18OXfIsm1QYwHkldmWTNIR8aZH2EYSPNyLFFZHEXZIGYvYrwnW++xGoWyt4w279QDrQ==}
 
   '@types/semver@7.5.8':
     resolution: {integrity: sha512-I8EUhyrgfLrcTkzV3TSsGyl1tSuPrEDzr0yd5m90UgNxQkyDXULk3b6MlQqTCpZpNtWe1K0hzclnZkTcLBe2UQ==}
@@ -475,11 +475,11 @@ snapshots:
 
   '@types/adm-zip@0.5.6':
     dependencies:
-      '@types/node': 16.18.115
+      '@types/node': 16.18.118
 
   '@types/js-yaml@4.0.9': {}
 
-  '@types/node@16.18.115': {}
+  '@types/node@16.18.118': {}
 
   '@types/semver@7.5.8': {}
 

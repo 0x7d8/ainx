@@ -23,6 +23,7 @@ export type Args = {
 	remote: string
 	includeCompat: boolean
 	outfile?: string
+	excludeFlags: string[]
 }
 
 export default async function genpatch(args: Args, force = false): Promise<number> {
@@ -152,7 +153,7 @@ export default async function genpatch(args: Args, force = false): Promise<numbe
 			console.log(chalk.gray('Installing Old Addon ...'))
 
 			await fs.promises.copyFile(path.join(dir, args.old), path.join(tmpDir, args.old))
-			await install({ files: [args.old], force: true, rebuild: false, skipSteps: args.skipSteps, disableSmoothMode: true, generateFromBlueprint: false, applyPermissions: false }, args.skipRoutes)
+			await install({ files: [args.old], excludeFlags: args.excludeFlags, force: true, rebuild: false, skipSteps: args.skipSteps, disableSmoothMode: true, generateFromBlueprint: false, applyPermissions: false }, args.skipRoutes)
 			await fs.promises.rm(path.join(tmpDir, args.old), { force: true })
 
 			await git.add('.')
@@ -164,19 +165,19 @@ export default async function genpatch(args: Args, force = false): Promise<numbe
 		console.log(chalk.gray('Installing Addon ...'))
 
 		await fs.promises.copyFile(path.join(dir, file), path.join(tmpDir, file))
-		await remove({ addons: [data.id], force: true, skipSteps: true, disableSmoothMode: true, migrate: false, rebuild: false }, true)
-		await install({ files: [file], force: true, rebuild: false, skipSteps: args.skipSteps, disableSmoothMode: true, generateFromBlueprint: false, applyPermissions: false }, Boolean(args.old) || args.skipRoutes)
+		if (args.old) await remove({ addons: [data.id], excludeFlags: args.excludeFlags, force: true, skipSteps: true, disableSmoothMode: true, migrate: false, rebuild: false }, true)
+		await install({ files: [file], excludeFlags: args.excludeFlags, force: true, rebuild: false, skipSteps: args.skipSteps, disableSmoothMode: true, generateFromBlueprint: false, applyPermissions: false }, Boolean(args.old) || args.skipRoutes)
 		await fs.promises.rm(path.join(tmpDir, file), { force: true })
 
 		console.log(chalk.gray('Installing Addon ...'), chalk.bold.green('Done'))
 		
-		console.log(chalk.gray('Generating Patch ...'))
+		console.log(chalk.gray('Generating Patch'), chalk.cyan(args.outfile || `${data.id}.patch`), chalk.gray('...'))
 
 		await git.add('.')
 		const diff = await git.diff(['--staged', '--binary'])
 		await fs.promises.writeFile(path.join(dir, args.outfile || `${data.id}.patch`), diff)
 
-		console.log(chalk.gray('Generating Patch ...'), chalk.bold.green('Done'))
+		console.log(chalk.gray('Generating Patch'), chalk.cyan(args.outfile || `${data.id}.patch`), chalk.gray('...'), chalk.bold.green('Done'))
 		console.log(chalk.italic.gray(`Took ${Date.now() - start}ms`))
 	} catch (err: any) {
 		console.error(chalk.red(String(err?.stack ?? err)))

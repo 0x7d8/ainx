@@ -8,6 +8,7 @@ import * as blueprint from "src/globals/blueprint"
 import path from "path"
 import { intercept } from "src/globals/log"
 import * as ainx from "src/globals/ainx"
+import os from "os"
 
 export type Args = {
 	addons: string[]
@@ -16,6 +17,7 @@ export type Args = {
 	migrate: boolean
 	skipSteps: boolean
 	disableSmoothMode: boolean
+	excludeFlags: string[]
 }
 
 export default async function remove(args: Args, skipRoutes: boolean = false): Promise<number> {
@@ -73,7 +75,7 @@ export default async function remove(args: Args, skipRoutes: boolean = false): P
 	const log = intercept()
 
 	try {
-		const [ data, conf, zip ] = ainx.parse(`.blueprint/extensions/${addon}/${addon}.ainx`)
+		const [ data, conf, zip ] = ainx.parse(`.blueprint/extensions/${addon}/${addon}.ainx`, args.excludeFlags)
 		if (!zip.test()) {
 			console.error(chalk.red('Invalid ainx file'))
 			return 1
@@ -97,7 +99,7 @@ export default async function remove(args: Args, skipRoutes: boolean = false): P
 		console.log(chalk.gray('Removing Addon'), chalk.cyan(data.id), chalk.gray('...'))
 		console.log()
 
-		ainx.unpack(zip, '/tmp/ainx/addon')
+		ainx.unpack(zip, path.join(os.tmpdir(), 'ainx'))
 
 		console.log(chalk.gray('Addon Name:'), chalk.cyan(conf.info.name))
 		console.log(chalk.gray('Addon Version:'), chalk.cyan(conf.info.version))
@@ -124,6 +126,7 @@ export default async function remove(args: Args, skipRoutes: boolean = false): P
 		}
 
 		await fs.promises.rm(`storage/extensions/${data.id}`, { recursive: true }).catch(() => null)
+		await fs.promises.rm(`storage/.extensions/${data.id}`, { recursive: true }).catch(() => null)
 
 		if (conf.data?.public) {
 			const publicStat = await fs.promises.stat(`public/extensions/${data.id}`).catch(() => null)
@@ -161,7 +164,7 @@ export default async function remove(args: Args, skipRoutes: boolean = false): P
 		}
 
 		if (conf.data?.directory) {
-			if (conf.info.flags?.includes('hasRemovalScript') && fs.existsSync(`.blueprint/extensions/${data.id}/private/remove.sh`)) {
+			if (fs.existsSync(`.blueprint/extensions/${data.id}/private/remove.sh`)) {
 				const cmd = cp.spawn('bash', [`.blueprint/extensions/${data.id}/private/remove.sh`], {
 					stdio: 'inherit',
 					cwd: process.cwd(),
@@ -394,6 +397,10 @@ export default async function remove(args: Args, skipRoutes: boolean = false): P
 			system.execute('php artisan optimize')
 		}	catch { }
 
+		try {
+			system.execute('php artisan queue:restart')
+		} catch { }
+
 		await blueprint.updateBlueprintCache()
 
 		await fs.promises.rm(`.blueprint/extensions/${addon}`, { recursive: true })
@@ -410,7 +417,7 @@ export default async function remove(args: Args, skipRoutes: boolean = false): P
 
 		return 1
 	} finally {
-		await fs.promises.rm('/tmp/ainx/addon', { recursive: true, force: true })
+		await fs.promises.rm(path.join(os.tmpdir(), 'ainx', 'addon'), { recursive: true, force: true })
 	}
 
 	return 0

@@ -200,7 +200,7 @@ export default async function bundle(args: Args): Promise<number> {
 			'  2. Follow any on-screen instructions if present, you can always exit while installing and run the command again',
 			'  3. Done!',
 			'',
-			' - Updating the (reinstall) addon:',
+			' - Updating the addon:',
 			'  1. Run',
 			`    ainx upgrade ${data.data.id}.ainx`,
 			'  2. Done!',
@@ -244,8 +244,8 @@ export default async function bundle(args: Args): Promise<number> {
 		if (args.patches) {
 			await ainx.writeZipPromise(`${data.data.id}__tmp.ainx`)
 
-			await genpatch({ file: `${data.data.id}__tmp.ainx`, skipSteps: true, includeCompat: true, skipRoutes: true, outfile: `${data.data.id}-withcompat.patch`, remote: args.remote }, true)
-			await genpatch({ file: `${data.data.id}__tmp.ainx`, skipSteps: true, includeCompat: false, skipRoutes: true, outfile: `${data.data.id}-withoutcompat.patch`, remote: args.remote }, true)
+			await genpatch({ file: `${data.data.id}__tmp.ainx`, excludeFlags: [], skipSteps: true, includeCompat: true, skipRoutes: true, outfile: `${data.data.id}-withcompat.patch`, remote: args.remote }, true)
+			await genpatch({ file: `${data.data.id}__tmp.ainx`, excludeFlags: [], skipSteps: true, includeCompat: false, skipRoutes: true, outfile: `${data.data.id}-withoutcompat.patch`, remote: args.remote }, true)
 
 			await fs.promises.rm(`${data.data.id}__tmp.ainx`, { force: true })
 

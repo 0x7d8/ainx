@@ -3,11 +3,11 @@ import { BlueprintConfig } from "src/types/blueprint/conf"
 import AdmZip from "adm-zip"
 import * as blueprint from "src/globals/blueprint"
 import { z } from "zod"
+import path from "path"
 
-export function parse(file: string | Buffer): [manifest: z.infer<typeof manifest>, blueprint: BlueprintConfig, zip: AdmZip] {
-	const zip = new AdmZip(file)
-
-	const manifestFile = zip.readAsText('manifest.json')
+export function parse(file: string | Buffer, excludedFlags: string[] = []): [manifest: z.infer<typeof manifest>, blueprint: BlueprintConfig, zip: AdmZip] {
+	const zip = new AdmZip(file),
+		manifestFile = zip.readAsText('manifest.json')
 
 	let conf: string
 	const blueprintZip = zip.getEntry('addon.blueprint')
@@ -17,7 +17,7 @@ export function parse(file: string | Buffer): [manifest: z.infer<typeof manifest
 		conf = zip.readAsText('addon/conf.yml')
 	}
 
-	return [manifest.parse(JSON.parse(manifestFile)), blueprint.config(conf), zip]
+	return [manifest.parse(JSON.parse(manifestFile)), blueprint.config(conf, excludedFlags), zip]
 }
 
 export function unpack(zip: AdmZip, location: string): { path(): string } {
@@ -26,7 +26,7 @@ export function unpack(zip: AdmZip, location: string): { path(): string } {
 	if (blueprintZip) {
 		new AdmZip(blueprintZip.getData()).extractAllTo(location, true, true)
 	} else {
-		zip.extractEntryTo(zip.getEntry('addon/')!, location.split('/').slice(0, -1).join('/'), true, true)
+		zip.extractEntryTo(zip.getEntry('addon/')!, location.split(path.sep).slice(0, -1).join(path.sep), true, true)
 	}
 
 	return {

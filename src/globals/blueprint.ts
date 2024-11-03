@@ -7,10 +7,15 @@ import * as fs from "fs"
 import chalk from "chalk"
 import path from "path"
 
-export function config(raw: string) {
+const ainxEngine = 'ainx'
+
+export function config(raw: string, excludedFlags: string[] = []): BlueprintConfig {
 	const data = yaml.load(raw)
 
-	return conf.parse(data)
+	const c = conf.parse(data)
+	c.info.flags = c.info.flags?.filter((flag) => !excludedFlags.includes(flag))
+
+	return c
 }
 
 export function consoleConfig(raw: string) {
@@ -21,6 +26,7 @@ export function consoleConfig(raw: string) {
 
 export function environment(conf: BlueprintConfig) {
 	return {
+		ENGINE: ainxEngine,
 		BLUEPRINT_VERSION: `ainx@${pckgVersion}`,
 		BLUEPRINT_DEVELOPER: 'false',
 		EXTENSION_TARGET: conf.info.target,
@@ -57,6 +63,7 @@ export function intervalToCall(data: { Interval?: string }): string | null {
 		case "monthly": return '->monthly()'
 		case "quarterly": return '->quarterly()'
 		case "yearly": return '->yearly()'
+
 		default: return `->cron('${data.Interval}')`
 	}
 }
@@ -103,10 +110,12 @@ export function placeholders(conf: BlueprintConfig, input: string): string {
 
 			'{webroot}': '/',
 			'{webroot/public}': `/extensions/${conf.info.identifier}`,
-			'{webroot/fs}': `/fs/extensions/${conf.info.identifier}`
+			'{webroot/fs}': `/fs/extensions/${conf.info.identifier}`,
+
+			'{engine}': ainxEngine
 		}
 
-		return input.replace(/\{[^\n\r ]*?\}/g, (match) => placeholders[match] ?? match)
+		return input.replace(/!?\{[^\n\r ]*?\}/g, (match) => match.startsWith('!') ? match.slice(1) : placeholders[match] ?? match)
 	}
 }
 

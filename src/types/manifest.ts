@@ -1,6 +1,8 @@
 import { z } from "zod"
+import path from "path"
+import os from "os"
 
-const bpFileTransformer = (s: string) => s.replaceAll('(blueprint)', '/tmp/ainx/addon')
+const bpFileTransformer = (s: string) => s.replaceAll('(blueprint)', path.join(os.tmpdir(), 'ainx', 'addon'))
 const panelFileTransformer = (s: string) => s.replaceAll('(panel)', process.cwd())
 
 export const step = z.union([

@@ -2,9 +2,7 @@ import { z } from "zod"
 
 export const flags = z.union([
 	z.literal('ignorePlaceholders'),
-	z.literal('forceLegacyPlaceholders'),
-	z.literal('hasInstallScript'),
-	z.literal('hasRemovalScript')
+	z.literal('forceLegacyPlaceholders')
 ]).array()
 
 export const conf = z.object({

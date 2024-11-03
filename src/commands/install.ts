@@ -27,6 +27,7 @@ export type Args = {
 	generateFromBlueprint: boolean
 	disableSmoothMode: boolean
 	applyPermissions: boolean
+	excludeFlags: string[]
 }
 
 function exists(file: string): boolean {
@@ -105,8 +106,8 @@ export default async function install(args: Args, skipRoutes: boolean = false): 
 	if (args.generateFromBlueprint) {
 		console.log(chalk.gray('Generating ainx file from blueprint file ...'))
 
-		const bpZip = new AdmZip(file)
-		const config = blueprint.config(bpZip.readAsText('conf.yml'))
+		const bpZip = new AdmZip(file),
+			config = blueprint.config(bpZip.readAsText('conf.yml'), args.excludeFlags)
 
 		const ainxZip = new AdmZip()
 		ainxZip.addLocalFile(file, undefined, 'addon.blueprint')
@@ -191,7 +192,13 @@ export default async function install(args: Args, skipRoutes: boolean = false): 
 
 		await fs.promises.mkdir(`.blueprint/extensions/${data.id}/fs`, { recursive: true })
 		await fs.promises.mkdir('storage/extensions', { recursive: true })
-		await fs.promises.symlink(path.join(process.cwd(), '.blueprint/extensions', data.id, 'fs'), path.join(process.cwd(), 'storage/extensions', data.id))
+		await fs.promises.mkdir('public/fs', { recursive: true })
+		await fs.promises.symlink(path.join(process.cwd(), '.blueprint/extensions', data.id, 'fs'), path.join(process.cwd(), 'storage/extensions', data.id)).catch(() => null)
+		await fs.promises.symlink(path.join(process.cwd(), '.blueprint/extensions', data.id, 'fs'), path.join(process.cwd(), 'public/fs', data.id)).catch(() => null)
+
+		await fs.promises.mkdir(`.blueprint/extensions/${data.id}/private`, { recursive: true })
+		await fs.promises.mkdir('storage/.extensions', { recursive: true })
+		await fs.promises.symlink(path.join(process.cwd(), '.blueprint/extensions', data.id, 'private'), path.join(process.cwd(), 'storage/.extensions', data.id)).catch(() => null)
 
 		console.log(chalk.gray('Linking storage files'), chalk.cyan(data.id), chalk.gray('...'), chalk.bold.green('Done'))
 
@@ -360,7 +367,7 @@ export default async function install(args: Args, skipRoutes: boolean = false): 
 
 			await blueprint.recursivePlaceholders(conf, `.blueprint/extensions/${data.id}/private`)
 
-			if (conf.info.flags?.includes('hasInstallScript') && fs.existsSync(`.blueprint/extensions/${data.id}/private/install.sh`)) {
+			if (fs.existsSync(`.blueprint/extensions/${data.id}/private/install.sh`)) {
 				const cmd = cp.spawn('bash', [`.blueprint/extensions/${data.id}/private/install.sh`], {
 					stdio: 'inherit',
 					cwd: process.cwd(),
@@ -583,7 +590,7 @@ export default async function install(args: Args, skipRoutes: boolean = false): 
 					const { done } = await enquirer.prompt<{ done: boolean }>({
 						type: 'confirm',
 						name: 'done',
-						message: 'Has the route been added? (say no to continue later)'
+						message: 'Did you add the route? THIS IS A MANUAL STEP (say no to continue later)'
 					})
 
 					if (!done) {
@@ -611,6 +618,10 @@ export default async function install(args: Args, skipRoutes: boolean = false): 
 		try {
 			system.execute('php artisan view:clear')
 		}	catch { }
+
+		try {
+			system.execute('php artisan queue:restart')
+		} catch { }
 
 		if (args.rebuild) await rebuild({
 			disableSmoothMode: args.disableSmoothMode
@@ -645,7 +656,7 @@ export default async function install(args: Args, skipRoutes: boolean = false): 
 
 		return 1
 	} finally {
-		await fs.promises.rm('/tmp/ainx/addon', { recursive: true, force: true })
+		await fs.promises.rm(path.join(os.tmpdir(), 'ainx', 'addon'), { recursive: true, force: true })
 	}
 
 	return 0

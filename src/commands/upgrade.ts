@@ -14,6 +14,7 @@ export type Args = {
 	skipSteps: boolean
 	rebuild: boolean
 	disableSmoothMode: boolean
+	excludeFlags: string[]
 }
 
 export default async function upgrade(args: Args, force: boolean = false): Promise<number> {
@@ -102,6 +103,7 @@ export default async function upgrade(args: Args, force: boolean = false): Promi
 
 	await remove({
 		addons: [file.replace('.ainx', '')],
+		excludeFlags: args.excludeFlags,
 		force: true,
 		migrate: false,
 		rebuild: false,
@@ -111,6 +113,7 @@ export default async function upgrade(args: Args, force: boolean = false): Promi
 
 	await install({
 		files: [file],
+		excludeFlags: args.excludeFlags,
 		force: true,
 		rebuild: args.rebuild,
 		skipSteps: args.skipSteps,

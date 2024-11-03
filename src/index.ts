@@ -2,7 +2,9 @@ import yargs from "yargs/yargs"
 import { hideBin } from "yargs/helpers"
 import { version as pckgVersion } from "../package.json"
 import chalk from "chalk"
-import cp from "child_process"
+import * as pterodactyl from "src/globals/pterodactyl"
+import { system } from "@rjweb/utils"
+import semver from "semver"
 
 import install from "src/commands/install"
 import remove from "src/commands/remove"
@@ -16,10 +18,21 @@ import backupRestore from "src/commands/backup/restore"
 import list from "src/commands/list"
 import info from "src/commands/info"
 
-console.log(chalk.bold.red('IF THERE ARE ANY ISSUES WITH THIS CLI, PLEASE REPORT THEM WITH'))
-console.log(chalk.bold.red('YOUR ADDON AUTHOR OR ON GITHUB (https://github.com/0x7d8/ainx)'))
+const pteroVersion = pterodactyl.version()
 
-const yarnVersion = cp.execSync('yarn --version').toString().trim()
+if (pteroVersion && pteroVersion.match(/v\d+\.\d+\.\d+/) && semver.lt(pteroVersion, '1.11.0')) {
+  console.log()
+  console.log(chalk.red('Pterodactyl version is not supported, please update to'), chalk.cyan('1.11.0'), chalk.red('or higher.'))
+
+  process.exit(1)
+}
+
+let yarnVersion: string
+try {
+  yarnVersion = system.execute('yarn --version').trim()
+} catch {
+  yarnVersion = 'not installed'
+}
 
 const logo = Object.freeze([
   chalk.yellow('██  ██ '),
@@ -29,11 +42,17 @@ const logo = Object.freeze([
 
 console.log()
 
-console.log(logo[0], chalk.gray('Version:    '), chalk.cyan(`ainx@${pckgVersion}`))
+console.log(logo[0], chalk.gray('Version:    '), chalk.cyan(`ainx@${pckgVersion}`.concat(pteroVersion ? ` (pterodactyl@${pteroVersion})` : '')))
 console.log(logo[1], chalk.gray('Node:       '), chalk.cyan(process.version.slice(1)))
 console.log(logo[2], chalk.gray('Yarn:       '), chalk.cyan(yarnVersion))
 
 console.log()
+
+function handleExit(code: number) {
+  console.log()
+
+  process.exit(code)
+}
 
 yargs(hideBin(process.argv))
   .version(pckgVersion)
@@ -80,8 +99,15 @@ yargs(hideBin(process.argv))
       type: 'boolean',
       description: 'apply permissions to files for the pterodactyl webserver',
       default: true
+    })
+    .option('excludeFlags', {
+      alias: 'eF',
+      type: 'string',
+      description: 'exclude flags from the internal blueprint config',
+      default: [],
+      array: true
     }),
-  (rg) => install(rg).then(process.exit))
+  (rg) => install(rg).then(handleExit))
   .command('remove [addons..]', 'remove an addon', (yargs) => yargs
     .positional('addons', {
       demandOption: true,
@@ -118,8 +144,15 @@ yargs(hideBin(process.argv))
       type: 'boolean',
       description: 'disable smooth build mode, try this if you have issues with rebuilding',
       default: false
+    })
+    .option('excludeFlags', {
+      alias: 'eF',
+      type: 'string',
+      description: 'exclude flags from the internal blueprint config',
+      default: [],
+      array: true
     }),
-  (rg) => remove(rg).then(process.exit))
+  (rg) => remove(rg).then(handleExit))
   .command('upgrade [files..]', 'upgrade an addon', (yargs) => yargs
     .positional('files', {
       demandOption: true,
@@ -144,8 +177,15 @@ yargs(hideBin(process.argv))
       type: 'boolean',
       description: 'disable smooth build mode, try this if you have issues with rebuilding',
       default: false
+    })
+    .option('excludeFlags', {
+      alias: 'eF',
+      type: 'string',
+      description: 'exclude flags from the internal blueprint config',
+      default: [],
+      array: true
     }),
-  (rg) => upgrade(rg).then(process.exit))
+  (rg) => upgrade(rg).then(handleExit))
   .command('bundle', 'bundle an addon', (yargs) => yargs
     .option('ainx', {
       alias: 'a',
@@ -165,7 +205,7 @@ yargs(hideBin(process.argv))
       description: 'remote url or local path to compare against for patches',
       default: 'https://github.com/pterodactyl/panel/releases/latest/download/panel.tar.gz'
     }),
-  (rg) => bundle(rg).then(process.exit))
+  (rg) => bundle(rg).then(handleExit))
   .command('rebuild', 'rebuild the panel frontend', (yargs) => yargs
     .option('disableSmoothMode', {
       alias: 'dSM',
@@ -173,14 +213,14 @@ yargs(hideBin(process.argv))
       description: 'disable smooth build mode, try this if you have issues with rebuilding',
       default: false
     }),
-  (rg) => rebuild(rg).then(process.exit))
+  (rg) => rebuild(rg).then(handleExit))
   .command('inspect <file>', 'inspect an addon', (yargs) => yargs
     .positional('file', {
       demandOption: true,
       type: 'string',
       description: 'the file to inspect'
     }),
-  (rg) => inspect(rg).then(process.exit))
+  (rg) => inspect(rg).then(handleExit))
   .command('genpatch <file>', 'generate a patch', (yargs) => yargs
     .positional('file', {
       demandOption: true,
@@ -219,20 +259,33 @@ yargs(hideBin(process.argv))
       type: 'boolean',
       description: 'skip manual frontend route insertion, generally recommended for more compatible patches',
       default: false
+    })
+    .option('excludeFlags', {
+      alias: 'eF',
+      type: 'string',
+      description: 'exclude flags from the internal blueprint config',
+      default: [],
+      array: true
     }),
-  (rg) => genpatch(rg).then(process.exit))
+  (rg) => genpatch(rg).then(handleExit))
   .command('backup', 'backup commands', (yargs) => yargs
     .command('create', 'create a panel backup', (yargs) => yargs,
-    (rg) => backupCreate(rg).then(process.exit))
+    (rg) => backupCreate(rg).then(handleExit))
     .command('restore', 'restore a panel backup', (yargs) => yargs,
-    (rg) => backupRestore(rg).then(process.exit))
+    (rg) => backupRestore(rg).then(handleExit))
     .strictCommands()
     .demandCommand(1)
   )
   .command('list', 'list installed addons', (yargs) => yargs,
-  (rg) => list(rg).then(process.exit))
-  .command('info', 'show general information', (yargs) => yargs,
-  (rg) => info(rg).then(process.exit))
+  (rg) => list(rg).then(handleExit))
+  .command('info', 'show general information', (yargs) => yargs
+    .option('modules', {
+      alias: 'm',
+      type: 'boolean',
+      description: 'show loaded php modules',
+      default: false
+    }),
+  (rg) => info(rg).then(handleExit))
   .strictCommands()
   .demandCommand(1)
   .parse()
