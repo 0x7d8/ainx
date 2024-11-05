@@ -40,16 +40,18 @@ export default async function backupRestore(args: Args): Promise<number> {
 
 	console.log(chalk.gray('Restoring'), chalk.cyan(backup.toLocaleString()), chalk.gray('...'))
 
-	const zip = new AdmZip(`.backups/backup-${backup.getTime()}.zip`),
-		files = await fs.promises.readdir('.').then((files) => files.filter((file) => (!file.startsWith('.') || file === '.blueprint') && file !== 'node_modules'))
+	const zip = new AdmZip(`.backups/backup-${backup.getTime()}.zip`)
 
-	console.log(chalk.gray('Removing'), chalk.cyan(files.length), chalk.gray('files ...'))
+	console.log(chalk.gray('Removing files ...'))
 
-	for (const file of files) {
-		await fs.promises.rm(file, { recursive: true, force: true })
-	}
+	await Promise.allSettled([
+		fs.promises.rm('resources', { recursive: true, force: true }),
+		fs.promises.rm('app', { recursive: true, force: true }),
+		fs.promises.rm('public/assets', { recursive: true, force: true }),
+		fs.promises.rm('routes', { recursive: true, force: true })
+	])
 
-	console.log(chalk.gray('Removing'), chalk.cyan(files.length), chalk.gray('files ...'), chalk.bold.green('Done'))
+	console.log(chalk.gray('Removing files ...'), chalk.bold.green('Done'))
 
 	console.log(chalk.gray('Extracting'), chalk.cyan(backup.toLocaleString()), chalk.gray('...'))
 
