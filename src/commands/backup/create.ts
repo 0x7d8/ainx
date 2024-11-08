@@ -24,7 +24,7 @@ export default async function backupCreate(args: Args): Promise<number> {
 
 	await fs.promises.mkdir('.backups').catch(() => null)
 
-	zip.addLocalFolder('.', undefined, (file) => file.startsWith('resources') || file.startsWith('app') || file.startsWith('public/assets') || file.startsWith('routes'))
+	zip.addLocalFolder('.', undefined, (file) => file.startsWith('resources') || file.startsWith('app') || (file.startsWith('public/assets') && !file.includes('extension')) || file.startsWith('routes'))
 	await zip.writeZipPromise(`.backups/${name}`)
 
 	console.log(chalk.gray('Creating panel backup ...'), chalk.bold.green('Done'))

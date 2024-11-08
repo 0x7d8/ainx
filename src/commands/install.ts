@@ -233,6 +233,8 @@ export default async function install(args: Args, skipRoutes: boolean = false): 
 
 			let icon: string
 			if (conf.info.icon) {
+				if (exists(`public/assets/extensions/${data.id}`)) await fs.promises.rm(`public/assets/extensions/${data.id}`, { recursive: true })
+
 				await fs.promises.mkdir(`public/assets/extensions/${data.id}`, { recursive: true })
 				await fs.promises.cp(path.join(source.path(), conf.info.icon), `public/assets/extensions/${data.id}/${conf.info.icon}`)
 
