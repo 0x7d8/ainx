@@ -471,17 +471,11 @@ export default async function install(args: Args, skipRoutes: boolean = false): 
 			console.log(chalk.gray('Linking views'), chalk.cyan(conf.requests.views), chalk.gray('...'), chalk.bold.green('Done'))
 		}
 
-		if (conf.database?.migrations && !fs.existsSync(`database/migrations-${data.id}`)) {
+		if (conf.database?.migrations) {
 			console.log(chalk.gray('Copying migrations'), chalk.cyan(conf.database.migrations), chalk.gray('...'))
 
 			await fs.promises.mkdir(`database/migrations-${data.id}`, { recursive: true })
-
-			const migrations = await fs.promises.readdir(path.join(source.path(), conf.database.migrations))
-			for (const migration of migrations) {
-				const content = await fs.promises.readFile(path.join(source.path(), conf.database.migrations, migration))
-
-				await fs.promises.writeFile(`database/migrations-${data.id}/${migration}`, content)
-			}
+			await fs.promises.cp(path.join(source.path(), conf.database.migrations), `database/migrations-${data.id}`, { recursive: true })
 
 			console.log(chalk.gray('Copying migrations'), chalk.cyan(conf.database.migrations), chalk.gray('...'), chalk.bold.green('Done'))
 		}
