@@ -583,6 +583,11 @@ export default async function install(args: Args, skipRoutes: boolean = false): 
 					console.log()
 					console.log(chalk.gray('[...]'))
 
+					console.log()
+					console.log(chalk.bold.red('@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@'))
+					console.log(chalk.bold.red('@  PLEASE READ ABOVE CAREFULLY, DO NOT SKIP  @'))
+					console.log(chalk.bold.red('@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@'))
+
 					const { done } = await enquirer.prompt<{ done: boolean }>({
 						type: 'confirm',
 						name: 'done',

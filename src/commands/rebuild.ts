@@ -3,6 +3,7 @@ import chalk from "chalk"
 import cp from "child_process"
 import fs from "fs"
 import path from "path"
+import os from "os"
 
 export type Args = {
 	disableSmoothMode: boolean
@@ -23,7 +24,7 @@ export default async function rebuild(args: Args): Promise<number> {
 	console.log(chalk.bold.red('@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@'))
 	console.log()
 
-	const tmpDir = path.join('/tmp', 'ainx', 'assets')
+	const tmpDir = path.join(os.tmpdir(), 'ainx', 'assets')
 	let files: string[] = []
 
 	if (!args.disableSmoothMode) {
@@ -32,6 +33,7 @@ export default async function rebuild(args: Args): Promise<number> {
 
 		files = await fs.promises.readdir(path.join(process.cwd(), 'public', 'assets'))
 			.then((files) => files.filter((file) => file.endsWith('.js') || file.endsWith('.map')))
+			.catch(() => [])
 
 		for (const file of files) {
 			await fs.promises.copyFile(path.join(process.cwd(), 'public', 'assets', file), path.join(tmpDir, file))
