@@ -41,6 +41,8 @@ export default async function backupCreate(args: Args): Promise<number> {
 			stdio: 'pipe'
 		})
 
+		await fs.promises.mkdir(path.join(os.tmpdir(), 'ainx'), { recursive: true }).catch(() => null)
+
 		const file = fs.createWriteStream(path.join(os.tmpdir(), 'ainx', 'database.sql'))
 		mysqlDump.stdout?.pipe(file)
 
