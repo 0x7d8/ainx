@@ -39,8 +39,6 @@ ainx
 [x] Flags
   [x] ignorePlaceholders
   [x] forceLegacyPlaceholders
-  [x] hasInstallScript
-  [x] hasRemovalScript
 [x] $blueprint
 [x] Artisan Console
 [x] Admin

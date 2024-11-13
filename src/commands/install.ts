@@ -403,8 +403,12 @@ export default async function install(args: Args, skipRoutes: boolean = false): 
 			const router = blueprint.placeholders(conf, await fs.promises.readFile(path.join(source.path(), conf.requests.routers.client), 'utf-8'))
 			await fs.promises.writeFile(`routes/client-${data.id}.php`, router)
 
-			if (await fs.promises.readFile(`routes/api-client.php`, 'utf-8').then((content) => !content.includes(`Route::prefix('/extensions/${data.id}')->group(base_path('routes/client-${data.id}.php'));`)).catch(() => true)) {
-				await fs.promises.appendFile('routes/api-client.php', `\nRoute::prefix('/extensions/${data.id}')->group(base_path('routes/client-${data.id}.php'));`)
+			const content = await fs.promises.readFile('routes/api-client.php', 'utf-8')
+			if (!content.includes(`Route::prefix('/extensions/${data.id}')->group(base_path('routes/client-${data.id}.php'));`)) {
+				await fs.promises.writeFile(
+					'routes/api-client.php',
+					`${content}\nRoute::prefix('/extensions/${data.id}')->group(base_path('routes/client-${data.id}.php'));`
+				)
 			}
 
 			console.log(chalk.gray('Adding client router'), chalk.cyan(`routes/client-${data.id}.php`), chalk.gray('...'), chalk.bold.green('Done'))
@@ -416,8 +420,12 @@ export default async function install(args: Args, skipRoutes: boolean = false): 
 			const router = blueprint.placeholders(conf, await fs.promises.readFile(path.join(source.path(), conf.requests.routers.application), 'utf-8'))
 			await fs.promises.writeFile(`routes/application-${data.id}.php`, router)
 
-			if (await fs.promises.readFile(`routes/api-application.php`, 'utf-8').then((content) => !content.includes(`Route::prefix('/extensions/${data.id}')->group(base_path('routes/application-${data.id}.php'));`)).catch(() => true)) {
-				await fs.promises.appendFile('routes/api-application.php', `\nRoute::prefix('/extensions/${data.id}')->group(base_path('routes/application-${data.id}.php'));`)
+			const content = await fs.promises.readFile('routes/api-application.php', 'utf-8')
+			if (!content.includes(`Route::prefix('/extensions/${data.id}')->group(base_path('routes/application-${data.id}.php'));`)) {
+				await fs.promises.writeFile(
+					'routes/api-application.php',
+					`${content}\nRoute::prefix('/extensions/${data.id}')->group(base_path('routes/application-${data.id}.php'));`
+				)
 			}
 
 			console.log(chalk.gray('Adding application router'), chalk.cyan(`routes/application-${data.id}.php`), chalk.gray('...'), chalk.bold.green('Done'))
@@ -429,8 +437,12 @@ export default async function install(args: Args, skipRoutes: boolean = false): 
 			const router = blueprint.placeholders(conf, await fs.promises.readFile(path.join(source.path(), conf.requests.routers.web), 'utf-8'))
 			await fs.promises.writeFile(`routes/base-${data.id}.php`, router)
 
-			if (await fs.promises.readFile(`routes/base.php`, 'utf-8').then((content) => !content.includes(`Route::prefix('/extensions/${data.id}')->group(base_path('routes/base-${data.id}.php'));`)).catch(() => true)) {
-				await fs.promises.appendFile('routes/base.php', `\nRoute::prefix('/extensions/${data.id}')->group(base_path('routes/base-${data.id}.php'));`)
+			const content = await fs.promises.readFile('routes/base.php', 'utf-8')
+			if (!content.includes(`Route::prefix('/extensions/${data.id}')->group(base_path('routes/base-${data.id}.php'));`)) {
+				await fs.promises.writeFile(
+					'routes/base.php',
+					`${content}\nRoute::prefix('/extensions/${data.id}')->group(base_path('routes/base-${data.id}.php'));`
+				)
 			}
 
 			console.log(chalk.gray('Adding base router'), chalk.gray(`routes/base-${data.id}.php`), chalk.gray('...'), chalk.bold.green('Done'))

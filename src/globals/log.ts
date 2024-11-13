@@ -1,9 +1,10 @@
 import axios from "axios"
 import chalk from "chalk"
 import enquirer from "enquirer"
+import { version } from "../../package.json"
 
 class Log {
-	public data = ''
+	public data = `AINX VERSION: ${version}\n`
 	public originalStdout = process.stdout._write
 	public originalStderr = process.stderr._write
 
