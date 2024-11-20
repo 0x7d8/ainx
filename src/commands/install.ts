@@ -397,7 +397,7 @@ export default async function install(args: Args, skipRoutes: boolean = false): 
 			console.log(chalk.gray('Adding admin router'), chalk.cyan(data.id), chalk.gray('...'), chalk.bold.green('Done'))
 		}
 
-		if (conf.requests?.routers?.client && !fs.existsSync(`routes/client-${data.id}.php`)) {
+		if (conf.requests?.routers?.client) {
 			console.log(chalk.gray('Adding client router'), chalk.cyan(`routes/client-${data.id}.php`), chalk.gray('...'))
 
 			const router = blueprint.placeholders(conf, await fs.promises.readFile(path.join(source.path(), conf.requests.routers.client), 'utf-8'))
@@ -414,7 +414,7 @@ export default async function install(args: Args, skipRoutes: boolean = false): 
 			console.log(chalk.gray('Adding client router'), chalk.cyan(`routes/client-${data.id}.php`), chalk.gray('...'), chalk.bold.green('Done'))
 		}
 
-		if (conf.requests?.routers?.application && !fs.existsSync(`routes/application-${data.id}.php`)) {
+		if (conf.requests?.routers?.application) {
 			console.log(chalk.gray('Adding application router'), chalk.cyan(`routes/application-${data.id}.php`), chalk.gray('...'))
 
 			const router = blueprint.placeholders(conf, await fs.promises.readFile(path.join(source.path(), conf.requests.routers.application), 'utf-8'))
@@ -431,7 +431,7 @@ export default async function install(args: Args, skipRoutes: boolean = false): 
 			console.log(chalk.gray('Adding application router'), chalk.cyan(`routes/application-${data.id}.php`), chalk.gray('...'), chalk.bold.green('Done'))
 		}
 
-		if (conf.requests?.routers?.web && !fs.existsSync(`routes/base-${data.id}.php`)) {
+		if (conf.requests?.routers?.web) {
 			console.log(chalk.gray('Adding base router'), chalk.gray(`routes/base-${data.id}.php`), chalk.gray('...'))
 
 			const router = blueprint.placeholders(conf, await fs.promises.readFile(path.join(source.path(), conf.requests.routers.web), 'utf-8'))
