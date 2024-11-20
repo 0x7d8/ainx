@@ -14,7 +14,7 @@ export function config(raw: string, excludedFlags: string[] = []): BlueprintConf
 	const data = yaml.load(raw)
 
 	const c = conf.parse(data)
-	c.info.flags = c.info.flags?.filter((flag) => !excludedFlags.includes(flag))
+	c.info.flags = c.info.flags?.filter((flag: string) => !excludedFlags.includes(flag))
 
 	return c
 }
@@ -227,7 +227,7 @@ const ainxAddonsRoutes = `
                             @foreach (File::allFiles(base_path('resources/views/admin/extensions')) as $partial)
                                 @if ($partial->getExtension() == 'php')
                                     <li class="{{ ! starts_with(Route::currentRouteName(), 'admin.extensions.'.basename(dirname(strstr($partial->getPathname(), "extensions/"))).'.index') ?: 'active' }}">
-                                        <a href="{{ route('admin.extensions.'.basename(dirname(strstr($partial->getPathname(), "extensions/"))).'.index') }}">
+                                        <a href="/admin/extensions/{{ basename(dirname(strstr($partial->getPathname(), "extensions/"))) }}">
                                             <i class="fa fa-puzzle-piece"></i> <span>{{ basename(dirname(strstr($partial->getPathname(), "extensions/"))) }}</span>
                                         </a>
                                     </li>
