@@ -50,6 +50,7 @@ export const manifest = z.object({
 	id: z.string(),
 	ainxRequirement: z.string().optional().default('1.3.0'),
 	hasRemove: z.string().optional(),
+	skipRemoveOnUpgrade: z.boolean().optional().default(false),
 	installation: step.array(),
 	removal: step.array().optional()
 })

@@ -638,6 +638,9 @@ export default async function install(args: Args, skipRoutes: boolean = false): 
 
 		if (args.rebuild) await rebuild({
 			disableSmoothMode: args.disableSmoothMode
+		}).catch(() => {
+			console.error(chalk.red('Rebuild failed, please rebuild manually after fixing the issue by running:'))
+			console.error(chalk.cyan('ainx rebuild'))
 		})
 
 		try {

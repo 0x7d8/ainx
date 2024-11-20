@@ -6,6 +6,7 @@ import { consoleConf } from "src/types/blueprint/console"
 import * as fs from "fs"
 import chalk from "chalk"
 import path from "path"
+import os from "os"
 
 const ainxEngine = 'ainx'
 
@@ -29,6 +30,7 @@ export function environment(conf: BlueprintConfig) {
 		ENGINE: ainxEngine,
 		BLUEPRINT_VERSION: `ainx@${pckgVersion}`,
 		BLUEPRINT_DEVELOPER: 'false',
+		BLUEPRINT_TMP: path.join(os.tmpdir(), 'ainx', 'addon'),
 		EXTENSION_TARGET: conf.info.target,
 		EXTENSION_IDENTIFIER: conf.info.identifier,
 		EXTENSION_VERSION: conf.info.version,
@@ -209,6 +211,7 @@ import AssetsBlueprintStyleCss from "src/compat/public/assets/blueprint.style.cs
 import BlueprintAdminLibrary from "src/compat/app/BlueprintFramework/Libraries/ExtensionLibrary/Admin/BlueprintAdminLibrary.php"
 import BlueprintClientLibrary from "src/compat/app/BlueprintFramework/Libraries/ExtensionLibrary/Client/BlueprintClientLibrary.php"
 import BlueprintConsoleLibrary from "src/compat/app/BlueprintFramework/Libraries/ExtensionLibrary/Console/BlueprintConsoleLibrary.php"
+import BlueprintBaseLibrary from "src/compat/app/BlueprintFramework/Libraries/ExtensionLibrary/BlueprintBaseLibrary.php"
 import BlueprintGetExtensionSchedules from "src/compat/app/BlueprintFramework/GetExtensionSchedules.php"
 
 import RoutesBlueprintClient from "src/compat/routes/blueprint/client.php"
@@ -245,6 +248,7 @@ export async function insertCompatFiles() {
 		'app/BlueprintFramework/Libraries/ExtensionLibrary/Admin/BlueprintAdminLibrary.php': BlueprintAdminLibrary,
 		'app/BlueprintFramework/Libraries/ExtensionLibrary/Client/BlueprintClientLibrary.php': BlueprintClientLibrary,
 		'app/BlueprintFramework/Libraries/ExtensionLibrary/Console/BlueprintConsoleLibrary.php': BlueprintConsoleLibrary,
+		'app/BlueprintFramework/Libraries/ExtensionLibrary/BlueprintBaseLibrary.php': BlueprintBaseLibrary,
 		'app/BlueprintFramework/GetExtensionSchedules.php': BlueprintGetExtensionSchedules,
 
 		'routes/blueprint/client.php': RoutesBlueprintClient,

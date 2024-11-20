@@ -384,11 +384,12 @@ export default async function remove(args: Args, skipRoutes: boolean = false): P
 			}
 		}
 
-		if (args.rebuild) {
-			await rebuild({
-				disableSmoothMode: args.disableSmoothMode
-			})
-		}
+		if (args.rebuild) await rebuild({
+			disableSmoothMode: args.disableSmoothMode
+		}).catch(() => {
+			console.error(chalk.red('Rebuild failed, please rebuild manually after fixing the issue by running:'))
+			console.error(chalk.cyan('ainx rebuild'))
+		})
 
 		try {
 			system.execute('php artisan config:clear')

@@ -160,6 +160,12 @@ yargs(hideBin(process.argv))
       description: 'the file(s) to use for upgrading',
       array: true
     })
+    .option('force', {
+      alias: 'f',
+      type: 'boolean',
+      description: 'force upgrade / skip confirmation',
+      default: false
+    })
     .option('skipSteps', {
       alias: 's',
       type: 'boolean',

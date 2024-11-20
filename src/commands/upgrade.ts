@@ -5,9 +5,11 @@ import install from "src/commands/install"
 import enquirer from "enquirer"
 import { intercept } from "src/globals/log"
 import * as ainx from "src/globals/ainx"
+import * as blueprint from "src/globals/blueprint"
 import { version as pckgVersion } from "../../package.json"
 import semver from "semver"
 import rebuild from "src/commands/rebuild"
+import cp from "child_process"
 
 export type Args = {
 	files: string[]
@@ -15,33 +17,39 @@ export type Args = {
 	rebuild: boolean
 	disableSmoothMode: boolean
 	excludeFlags: string[]
+	force: boolean
 }
 
-export default async function upgrade(args: Args, force: boolean = false): Promise<number> {
+export default async function upgrade(args: Args): Promise<number> {
 	if (!args.files.length) {
 		console.error(chalk.red('No files provided'))
 		return 1
 	}
 
 	if (args.files.length !== 1) {
-		const { confirm } = await enquirer.prompt<{ confirm: boolean }>({
-			type: 'confirm',
-			name: 'confirm',
-			message: `Upgrade ${args.files.length} addons?`
-		})
+		if (!args.force) {
+			const { confirm } = await enquirer.prompt<{ confirm: boolean }>({
+				type: 'confirm',
+				name: 'confirm',
+				message: `Upgrade ${args.files.length} addons?`
+			})
 
-		if (!confirm) {
-			console.log(chalk.yellow('Cancelled'))
-			return 0
+			if (!confirm) {
+				console.log(chalk.yellow('Cancelled'))
+				return 0
+			}
 		}
 
 		console.log(chalk.gray('Upgrading'), chalk.cyan(args.files.length), chalk.gray('addons ...'))
 
 		for (const file of args.files) {
-			await upgrade({ ...args, files: [file], rebuild: false }, true)
+			await upgrade({ ...args, files: [file], rebuild: false })
 		}
 
-		if (args.rebuild) await rebuild({ disableSmoothMode: args.disableSmoothMode })
+		if (args.rebuild) await rebuild({ disableSmoothMode: args.disableSmoothMode }).catch(() => {
+			console.error(chalk.red('Rebuild failed, please rebuild manually after fixing the issue by running:'))
+			console.error(chalk.cyan('ainx rebuild'))
+		})
 
 		console.log(chalk.gray('Upgrading'), chalk.cyan(args.files.length), chalk.gray('addons ...'), chalk.bold.green('Done'))
 
@@ -81,7 +89,7 @@ export default async function upgrade(args: Args, force: boolean = false): Promi
 		return 1
 	}
 
-	if (!force) {
+	if (!args.force) {
 		const { confirm } = await enquirer.prompt<{ confirm: boolean }>({
 			type: 'confirm',
 			name: 'confirm',
@@ -101,15 +109,32 @@ export default async function upgrade(args: Args, force: boolean = false): Promi
 	console.log(chalk.gray('Upgrading ...'))
 	console.log()
 
-	await remove({
-		addons: [file.replace('.ainx', '')],
-		excludeFlags: args.excludeFlags,
-		force: true,
-		migrate: false,
-		rebuild: false,
-		skipSteps: args.skipSteps,
-		disableSmoothMode: args.disableSmoothMode
-	}, true)
+	if (conf.data?.directory && fs.existsSync(`.blueprint/extensions/${data.id}/private/update.sh`)) {
+		console.log(chalk.gray('Running addon update script ...'))
+
+		const cmd = cp.spawn('bash', [`.blueprint/extensions/${data.id}/private/update.sh`], {
+			stdio: 'inherit',
+			cwd: process.cwd(),
+			env: {
+				...process.env,
+				...blueprint.environment(conf)
+			}
+		})
+
+		await new Promise((resolve) => cmd.on('close', resolve))
+
+		console.log(chalk.gray('Running addon update script ...'), chalk.bold.green('Done'))
+	} else if (!data.skipRemoveOnUpgrade) {
+		await remove({
+			addons: [file.replace('.ainx', '')],
+			excludeFlags: args.excludeFlags,
+			force: true,
+			migrate: false,
+			rebuild: false,
+			skipSteps: args.skipSteps,
+			disableSmoothMode: args.disableSmoothMode
+		}, true)
+	}
 
 	await install({
 		files: [file],
@@ -125,7 +150,7 @@ export default async function upgrade(args: Args, force: boolean = false): Promi
 	console.log(chalk.gray('Upgrading ...'), chalk.bold.green('Done'))
 	console.log(chalk.italic.gray(`Took ${Date.now() - start}ms`))
 
-	if (!force) await log.ask()
+	if (!args.force) await log.ask()
 
 	return 0
 }
