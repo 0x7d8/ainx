@@ -43,7 +43,7 @@ export default async function upgrade(args: Args): Promise<number> {
 		console.log(chalk.gray('Upgrading'), chalk.cyan(args.files.length), chalk.gray('addons ...'))
 
 		for (const file of args.files) {
-			await upgrade({ ...args, files: [file], rebuild: false })
+			await upgrade({ ...args, files: [file], rebuild: false, force: true })
 		}
 
 		if (args.rebuild) await rebuild({ disableSmoothMode: args.disableSmoothMode }).catch(() => {

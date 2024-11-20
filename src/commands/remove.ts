@@ -41,7 +41,7 @@ export default async function remove(args: Args, skipRoutes: boolean = false): P
 		console.log(chalk.gray('Removing'), chalk.cyan(args.addons.length), chalk.gray('addons ...'))
 
 		for (const addon of args.addons) {
-			await remove({ ...args, addons: [addon], rebuild: false })
+			await remove({ ...args, addons: [addon], rebuild: false, force: true })
 		}
 
 		if (args.rebuild) await rebuild({ disableSmoothMode: args.disableSmoothMode })

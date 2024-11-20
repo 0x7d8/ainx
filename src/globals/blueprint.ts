@@ -14,7 +14,7 @@ export function config(raw: string, excludedFlags: string[] = []): BlueprintConf
 	const data = yaml.load(raw)
 
 	const c = conf.parse(data)
-	c.info.flags = c.info.flags?.filter((flag: string) => !excludedFlags.includes(flag))
+	c.info.flags = c.info.flags?.filter((flag) => !excludedFlags.includes(flag))
 
 	return c
 }
