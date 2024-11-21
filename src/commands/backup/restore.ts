@@ -2,7 +2,7 @@ import chalk from "chalk"
 import fs from "fs"
 import AdmZip from "adm-zip"
 import enquirer from "enquirer"
-import { filesystem } from "@rjweb/utils"
+import { filesystem, system } from "@rjweb/utils"
 import cp from "child_process"
 
 export type Args = {}
@@ -55,21 +55,32 @@ export default async function backupRestore(args: Args): Promise<number> {
 			console.log(chalk.gray('Restoring database ...'))
 
 			const env = await filesystem.env('.env').catch(() => null)
-
 			if (!env) {
 				console.error(chalk.red('No .env file found, cannot restore database!'))
 				return 1
 			}
 
-			const mysql = cp.spawn('mysql', ['-u', env.DB_USERNAME, '-p' + env.DB_PASSWORD, env.DB_DATABASE], {
+			const mysql = system.execute('which mysql')
+			if (!mysql) {
+				console.error(chalk.red('mysql not found, cannot backup database!'))
+				return 1
+			}
+	
+			const host = env.DB_HOST ?? env.DATABASE_HOST ?? 'localhost',
+				port = parseInt(env.DB_PORT ?? env.DATABASE_PORT ?? '3306'),
+				database = env.DB_DATABASE ?? env.DATABASE_DATABASE,
+				username = env.DB_USERNAME ?? env.DATABASE_USERNAME,
+				password = env.DB_PASSWORD ?? env.DATABASE_PASSWORD	
+
+			const mysqlRes = cp.spawn('mysql', ['-u', username, '-p' + password, '-h', host, '-P', port.toString(), database], {
 				stdio: 'pipe'
 			})
 
 			const file = zip.readFile('database.sql')
-			mysql.stdin?.write(file)
-			mysql.stdin?.end()
+			mysqlRes.stdin?.write(file)
+			mysqlRes.stdin?.end()
 
-			await new Promise((resolve) => mysql.on('close', resolve))
+			await new Promise((resolve) => mysqlRes.on('close', resolve))
 
 			console.log(chalk.gray('Restoring database ...'), chalk.bold.green('Done'))
 		}

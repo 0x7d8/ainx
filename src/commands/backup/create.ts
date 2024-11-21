@@ -2,7 +2,7 @@ import chalk from "chalk"
 import fs from "fs"
 import AdmZip from "adm-zip"
 import enquirer from "enquirer"
-import { filesystem } from "@rjweb/utils"
+import { filesystem, system } from "@rjweb/utils"
 import cp from "child_process"
 import path from "path"
 import os from "os"
@@ -31,22 +31,33 @@ export default async function backupCreate(args: Args): Promise<number> {
 		console.log(chalk.gray('Creating database backup ...'))
 
 		const env = await filesystem.env('.env').catch(() => null)
-
 		if (!env) {
 			console.error(chalk.red('No .env file found, cannot backup database!'))
 			return 1
 		}
 
-		const mysqlDump = cp.spawn('mysqldump', ['-u', env.DB_USERNAME, '-p' + env.DB_PASSWORD, env.DB_DATABASE], {
+		const mysqlDump = system.execute('which mysqldump')
+		if (!mysqlDump) {
+			console.error(chalk.red('mysqldump not found, cannot backup database!'))
+			return 1
+		}
+
+		const host = env.DB_HOST ?? env.DATABASE_HOST ?? 'localhost',
+			port = parseInt(env.DB_PORT ?? env.DATABASE_PORT ?? '3306'),
+			database = env.DB_DATABASE ?? env.DATABASE_DATABASE,
+			username = env.DB_USERNAME ?? env.DATABASE_USERNAME,
+			password = env.DB_PASSWORD ?? env.DATABASE_PASSWORD
+
+		const mysqlDumpRes = cp.spawn('mysqldump', ['-u', username, '-p' + password, '-h', host, '-P', port.toString(), database], {
 			stdio: 'pipe'
 		})
 
 		await fs.promises.mkdir(path.join(os.tmpdir(), 'ainx'), { recursive: true }).catch(() => null)
 
 		const file = fs.createWriteStream(path.join(os.tmpdir(), 'ainx', 'database.sql'))
-		mysqlDump.stdout?.pipe(file)
+		mysqlDumpRes.stdout?.pipe(file)
 
-		await new Promise((resolve) => mysqlDump.on('close', resolve))
+		await new Promise((resolve) => mysqlDumpRes.on('close', resolve))
 
 		console.log(chalk.gray('Creating database backup ...'), chalk.bold.green('Done'))
 	}
