@@ -630,7 +630,12 @@ export default async function install(args: Args, skipRoutes: boolean = false): 
 
 			console.log(chalk.gray('Running'), chalk.cyan(files), chalk.gray('migration(s) ...'))
 
-			system.execute(`php artisan migrate --force --path=database/migrations-${data.id}`)
+			try {
+				system.execute(`php artisan migrate --force --path=database/migrations-${data.id}`)
+			} catch {
+				console.error(chalk.red('Migration failed, please run the following command manually:'))
+				console.error(chalk.cyan(`php artisan migrate --force --path=database/migrations-${data.id}`))
+			}
 
 			console.log(chalk.gray('Running'), chalk.cyan(files), chalk.gray('migration(s) ...'), chalk.bold.green('Done'))
 		}
