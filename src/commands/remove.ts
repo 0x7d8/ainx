@@ -53,6 +53,14 @@ export default async function remove(args: Args, skipRoutes: boolean = false): P
 
 	let addon = args.addons[0].replace('.ainx', '')
 
+	const bash = blueprint.bash()
+	if (!bash) {
+		console.error(chalk.red('Bash is required to install addons'))
+		console.error(chalk.gray('Install bash using:'), chalk.cyan('apt install bash'))
+		console.error(chalk.gray('Or on Windows:'), chalk.cyan('https://git-scm.com/download/win'))
+		return 1
+	}
+
 	const yarn = await system.execute('yarn --version', { async: true }).catch(() => null)
 	if (!yarn) {
 		console.error(chalk.red('Yarn is required to remove addons'))
@@ -165,7 +173,7 @@ export default async function remove(args: Args, skipRoutes: boolean = false): P
 
 		if (conf.data?.directory) {
 			if (fs.existsSync(`.blueprint/extensions/${data.id}/private/remove.sh`)) {
-				const cmd = cp.spawn('bash', [`.blueprint/extensions/${data.id}/private/remove.sh`], {
+				const cmd = cp.spawn(bash, [`.blueprint/extensions/${data.id}/private/remove.sh`], {
 					stdio: 'inherit',
 					cwd: process.cwd(),
 					env: {

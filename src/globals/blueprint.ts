@@ -25,6 +25,26 @@ export function consoleConfig(raw: string) {
 	return consoleConf.parse(data)
 }
 
+export function bash(): string | null {
+	if (os.platform() === 'win32') {
+		if (fs.existsSync('C:\\Program Files\\Git\\bin\\bash.exe')) {
+			return 'C:\\Program Files\\Git\\bin\\bash.exe'
+		} else if (fs.existsSync('C:\\Program Files\\Git\\bin\\bash')) {
+			return 'C:\\Program Files\\Git\\bin\\bash'
+		}
+
+		return null
+	}
+
+	try {
+		const bash = system.execute('which bash')
+
+		return fs.existsSync(bash) ? bash : null
+	} catch {
+		return null
+	}
+}
+
 export function environment(conf: BlueprintConfig) {
 	return {
 		ENGINE: ainxEngine,
@@ -70,6 +90,13 @@ export function intervalToCall(data: { Interval?: string }): string | null {
 	}
 }
 
+const platform = os.platform()
+function transformToWindowsPath(path: string): string {
+	if (platform !== 'win32') return path
+
+	return `/${path.replace(/[A-Z]:/g, (match) => match.toLowerCase()).replaceAll('\\', '/')}`
+}
+
 export function placeholders(conf: BlueprintConfig, input: string): string {
 	if (conf.info.flags?.includes('ignorePlaceholders')) return input
 
@@ -80,9 +107,9 @@ export function placeholders(conf: BlueprintConfig, input: string): string {
 			'name': conf.info.name,
 			'identifier': conf.info.identifier,
 
-			'path': process.cwd(),
-			'datapath': `${process.cwd()}/.blueprint/extensions/${conf.info.identifier}/private`,
-			'publicpath': `${process.cwd()}/.blueprint/extensions/${conf.info.identifier}/public`,
+			'path': transformToWindowsPath(process.cwd()),
+			'datapath': transformToWindowsPath(`${process.cwd()}/.blueprint/extensions/${conf.info.identifier}/private`),
+			'publicpath': transformToWindowsPath(`${process.cwd()}/.blueprint/extensions/${conf.info.identifier}/public`),
 			'installmode': 'normal',
 			'blueprintversion': `ainx@${pckgVersion}`,
 			'timestamp': Math.floor(Date.now() / 1000 - process.uptime()).toString(),
@@ -106,9 +133,9 @@ export function placeholders(conf: BlueprintConfig, input: string): string {
 			'{target}': `ainx@${pckgVersion}`,
 			'{is_target}': 'false',
 
-			'{root}': process.cwd(),
-			'{root/public}': `${process.cwd()}/.blueprint/extensions/${conf.info.identifier}/public`,
-			'{root/data}': `${process.cwd()}/.blueprint/extensions/${conf.info.identifier}/private`,
+			'{root}': transformToWindowsPath(process.cwd()),
+			'{root/public}': transformToWindowsPath(`${process.cwd()}/.blueprint/extensions/${conf.info.identifier}/public`),
+			'{root/data}': transformToWindowsPath(`${process.cwd()}/.blueprint/extensions/${conf.info.identifier}/private`),
 
 			'{webroot}': '/',
 			'{webroot/public}': `/extensions/${conf.info.identifier}`,

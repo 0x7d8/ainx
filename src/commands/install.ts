@@ -87,6 +87,14 @@ export default async function install(args: Args, skipRoutes: boolean = false): 
 		return 1
 	}
 
+	const bash = blueprint.bash()
+	if (!bash) {
+		console.error(chalk.red('Bash is required to install addons'))
+		console.error(chalk.gray('Install bash using:'), chalk.cyan('apt install bash'))
+		console.error(chalk.gray('Or on Windows:'), chalk.cyan('https://git-scm.com/download/win'))
+		return 1
+	}
+
 	const yarn = await system.execute('yarn --version', { async: true }).catch(() => null)
 	if (!yarn) {
 		console.error(chalk.red('Yarn is required to install addons'))
@@ -370,7 +378,7 @@ export default async function install(args: Args, skipRoutes: boolean = false): 
 			await blueprint.recursivePlaceholders(conf, `.blueprint/extensions/${data.id}/private`)
 
 			if (fs.existsSync(`.blueprint/extensions/${data.id}/private/install.sh`)) {
-				const cmd = cp.spawn('bash', [`.blueprint/extensions/${data.id}/private/install.sh`], {
+				const cmd = cp.spawn(bash, [`.blueprint/extensions/${data.id}/private/install.sh`], {
 					stdio: 'inherit',
 					cwd: process.cwd(),
 					env: {
@@ -574,8 +582,7 @@ export default async function install(args: Args, skipRoutes: boolean = false): 
 						'        },'
 					].join('\n')
 
-					const isTsx = fs.existsSync('resources/scripts/routers/routes.tsx'),
-						importLine = `import ${step.component} from '${step.componentPath}';`
+					const isTsx = fs.existsSync('resources/scripts/routers/routes.tsx')
 
 					console.log(chalk.gray('Please edit the following file according to the below instructions:'))
 					console.log(chalk.italic.gray('(green lines are added, white lines already exist)'))
@@ -585,7 +592,7 @@ export default async function install(args: Args, skipRoutes: boolean = false): 
 					console.log()
 					console.log(chalk.white('import DatabasesContainer from \'@/components/server/databases/DatabasesContainer\';'))
 					console.log(chalk.white('import ScheduleContainer from \'@/components/server/schedules/ScheduleContainer\';'))
-					console.log(chalk.bgGreenBright.white(importLine))
+					console.log(chalk.bgGreenBright.white(`import ${step.component} from '${step.componentPath}';`))
 					console.log(chalk.white('import UsersContainer from \'@/components/server/users/UsersContainer\';'))
 					console.log()
 					console.log(chalk.gray('[...]'))
