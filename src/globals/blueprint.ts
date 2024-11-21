@@ -8,7 +8,8 @@ import chalk from "chalk"
 import path from "path"
 import os from "os"
 
-const ainxEngine = 'ainx'
+export const ainxEngine = 'ainx',
+	ainxCompatibility = 'beta-2024-11'
 
 export function config(raw: string, excludedFlags: string[] = []): BlueprintConfig {
 	const data = yaml.load(raw)
@@ -90,13 +91,6 @@ export function intervalToCall(data: { Interval?: string }): string | null {
 	}
 }
 
-const platform = os.platform()
-function transformToWindowsPath(path: string): string {
-	if (platform !== 'win32') return path
-
-	return `/${path.replace(/[A-Z]:/g, (match) => match.toLowerCase()).replaceAll('\\', '/')}`
-}
-
 export function placeholders(conf: BlueprintConfig, input: string): string {
 	if (conf.info.flags?.includes('ignorePlaceholders')) return input
 
@@ -107,9 +101,9 @@ export function placeholders(conf: BlueprintConfig, input: string): string {
 			'name': conf.info.name,
 			'identifier': conf.info.identifier,
 
-			'path': transformToWindowsPath(process.cwd()),
-			'datapath': transformToWindowsPath(`${process.cwd()}/.blueprint/extensions/${conf.info.identifier}/private`),
-			'publicpath': transformToWindowsPath(`${process.cwd()}/.blueprint/extensions/${conf.info.identifier}/public`),
+			'path': process.cwd(),
+			'datapath': path.join(process.cwd(), `.blueprint/extensions/${conf.info.identifier}/private`),
+			'publicpath': path.join(process.cwd(), `.blueprint/extensions/${conf.info.identifier}/public`),
 			'installmode': 'normal',
 			'blueprintversion': `ainx@${pckgVersion}`,
 			'timestamp': Math.floor(Date.now() / 1000 - process.uptime()).toString(),
@@ -130,12 +124,13 @@ export function placeholders(conf: BlueprintConfig, input: string): string {
 			'{random}': number.generate(0, 99999).toString(),
 			'{timestamp}': Math.floor(Date.now() / 1000 - process.uptime()).toString(),
 			'{mode}': 'local',
-			'{target}': `ainx@${pckgVersion}`,
-			'{is_target}': 'false',
+			'{target}': `ainx@${pckgVersion} ${ainxCompatibility}`,
+			'{is_target}': conf.info.target === ainxCompatibility ? 'true' : 'false',
 
-			'{root}': transformToWindowsPath(process.cwd()),
-			'{root/public}': transformToWindowsPath(`${process.cwd()}/.blueprint/extensions/${conf.info.identifier}/public`),
-			'{root/data}': transformToWindowsPath(`${process.cwd()}/.blueprint/extensions/${conf.info.identifier}/private`),
+			'{root}': process.cwd(),
+			'{root/public}': path.join(process.cwd(), `.blueprint/extensions/${conf.info.identifier}/public`),
+			'{root/data}': path.join(process.cwd(), `.blueprint/extensions/${conf.info.identifier}/private`),
+			'{root/fs}': path.join(process.cwd(), `.blueprint/extensions/${conf.info.identifier}/fs`),
 
 			'{webroot}': '/',
 			'{webroot/public}': `/extensions/${conf.info.identifier}`,
