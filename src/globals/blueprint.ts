@@ -39,7 +39,7 @@ export function bash(): string | null {
 	try {
 		const bash = system.execute('which bash')
 
-		return fs.existsSync(bash) ? bash : null
+		return fs.existsSync(bash) ? bash.trim() : null
 	} catch {
 		return null
 	}
