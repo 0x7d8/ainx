@@ -257,7 +257,7 @@ export default async function install(args: Args, skipRoutes: boolean = false): 
 				__version__: conf.info.version,
 				__description__: conf.info.description.replaceAll('"', '\\"'),
 				__icon__: icon,
-				__content__: content
+				__content__: blueprint.placeholders(conf, content)
 			}
 
 			await fs.promises.writeFile(
