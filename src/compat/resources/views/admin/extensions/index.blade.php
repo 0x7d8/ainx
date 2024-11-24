@@ -1,8 +1,8 @@
 @extends('layouts.admin')
 <?php 
-    $EXTENSION_ID = "{identifier}";
-    $EXTENSION_NAME = "{name}";
-    $EXTENSION_VERSION = "{version}";
+    $EXTENSION_ID = "__identifier__";
+    $EXTENSION_NAME = "__name__";
+    $EXTENSION_VERSION = "__version__";
     $EXTENSION_DESCRIPTION = "__description__";
     $EXTENSION_ICON = "__icon__";
 ?>

@@ -251,9 +251,18 @@ export default async function install(args: Args, skipRoutes: boolean = false): 
 				icon = `https://raw.githubusercontent.com/BlueprintFramework/framework/refs/heads/main/blueprint/assets/Extensions/Defaults/${number.generate(1, 5)}.jpg`
 			}
 
+			const placeholders: Record<string, string> = {
+				__identifier__: data.id,
+				__name__: conf.info.name.replaceAll('"', '\\"'),
+				__version__: conf.info.version,
+				__description__: conf.info.description.replaceAll('"', '\\"'),
+				__icon__: icon,
+				__content__: content
+			}
+
 			await fs.promises.writeFile(
 				`resources/views/admin/extensions/${data.id}/index.blade.php`,
-				blueprint.placeholders(conf, BladeIndex.replace('__description__', conf.info.description).replace('__icon__', icon).replace('__content__', content))
+				BladeIndex.replace(/__identifier__|__name__|__version__|__description__|__icon__|__content__/g, (match) => placeholders[match])
 			)
 
 			console.log(chalk.gray('Adding admin view'), chalk.cyan(conf.admin.view), chalk.gray('...'), chalk.bold.green('Done'))
