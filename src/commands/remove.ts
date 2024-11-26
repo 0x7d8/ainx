@@ -80,10 +80,11 @@ export default async function remove(args: Args, skipRoutes: boolean = false): P
 		return 1
 	}
 
-	const log = intercept()
+	const log = intercept(),
+		file = fs.existsSync(`.blueprint/extensions/${addon}/${addon}.ainx`) ? `.blueprint/extensions/${addon}/${addon}.ainx` : `${addon}.ainx`
 
 	try {
-		const [ data, conf, zip ] = ainx.parse(`.blueprint/extensions/${addon}/${addon}.ainx`, args.excludeFlags)
+		const [ data, conf, zip ] = ainx.parse(file, args.excludeFlags)
 		if (!zip.test()) {
 			console.error(chalk.red('Invalid ainx file'))
 			return 1

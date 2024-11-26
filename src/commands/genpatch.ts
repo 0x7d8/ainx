@@ -29,6 +29,11 @@ export type Args = {
 export default async function genpatch(args: Args, force = false): Promise<number> {
 	const file = args.file
 
+	if (parseInt(process.versions.node.split('.')[0]) < 17) {
+		console.error(chalk.red('Node version not supported, please update to Node 17 or higher to use genpatch'))
+		return 1
+	}
+
 	if (!file.endsWith('.ainx')) {
 		console.error(chalk.red('Invalid file type, file must end in'), chalk.cyan('.ainx'))
 		return 1

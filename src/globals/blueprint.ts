@@ -236,10 +236,6 @@ import BlueprintConsoleLibrary from "src/compat/app/BlueprintFramework/Libraries
 import BlueprintBaseLibrary from "src/compat/app/BlueprintFramework/Libraries/ExtensionLibrary/BlueprintBaseLibrary.php"
 import BlueprintGetExtensionSchedules from "src/compat/app/BlueprintFramework/GetExtensionSchedules.php"
 
-import RoutesBlueprintClient from "src/compat/routes/blueprint/client.php"
-import RoutesBlueprintApplication from "src/compat/routes/blueprint/application.php"
-import RoutesBlueprintWeb from "src/compat/routes/blueprint/web.php"
-
 import ScriptLibraryGrabEnv from "src/compat/scripts/libraries/grabenv.sh"
 import ScriptLibraryLogFormat from "src/compat/scripts/libraries/logFormat.sh"
 import ScriptLibraryParseYaml from "src/compat/scripts/libraries/parse_yaml.sh"
@@ -272,10 +268,6 @@ export async function insertCompatFiles() {
 		'app/BlueprintFramework/Libraries/ExtensionLibrary/Console/BlueprintConsoleLibrary.php': BlueprintConsoleLibrary,
 		'app/BlueprintFramework/Libraries/ExtensionLibrary/BlueprintBaseLibrary.php': BlueprintBaseLibrary,
 		'app/BlueprintFramework/GetExtensionSchedules.php': BlueprintGetExtensionSchedules,
-
-		'routes/blueprint/client.php': RoutesBlueprintClient,
-		'routes/blueprint/application.php': RoutesBlueprintApplication,
-		'routes/blueprint/web.php': RoutesBlueprintWeb,
 
 		'scripts/libraries/grabenv.sh': ScriptLibraryGrabEnv,
 		'scripts/libraries/logFormat.sh': ScriptLibraryLogFormat,
