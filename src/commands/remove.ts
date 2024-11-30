@@ -136,6 +136,7 @@ export default async function remove(args: Args, skipRoutes: boolean = false): P
 
 		await fs.promises.rm(`storage/extensions/${data.id}`, { recursive: true }).catch(() => null)
 		await fs.promises.rm(`storage/.extensions/${data.id}`, { recursive: true }).catch(() => null)
+		await fs.promises.rm(`public/fs/${data.id}`, { recursive: true }).catch(() => null)
 
 		if (conf.data?.public) {
 			const publicStat = await fs.promises.stat(`public/extensions/${data.id}`).catch(() => null)
