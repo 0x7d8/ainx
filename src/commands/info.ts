@@ -2,6 +2,7 @@ import chalk from "chalk"
 import fs from "fs"
 import path from "path"
 import { filesystem, number, size, system } from "@rjweb/utils"
+import * as blueprint from "src/globals/blueprint"
 import os from "os"
 
 export type Args = {
@@ -39,6 +40,16 @@ export default async function info(args: Args): Promise<number> {
 		} catch { }
 	}
 
+	let bash = blueprint.bash()
+	if (bash) {
+		try {
+			const version = system.execute(`${bash} --version`).split('\n')[0].split(' ')[3]
+
+			bash = `${version} (${bash})`
+		} catch { }
+	}
+
+	console.log(seperator, chalk.gray('Bash:       '), chalk[!bash ? 'red' : 'cyan'](bash ? bash : 'Not installed'))
 	console.log(seperator, chalk.gray('PHP:        '), chalk[!php || parseInt(php.split('.')[0]) < 8 ? 'red' : 'cyan'](php ? `${php} (${args.modules ? modules.join(', ') : `${modules.length} modules`})` : 'Not installed'))
 	console.log(seperator, chalk.gray('CPU Threads:'), chalk.cyan(os.cpus().length))
 	console.log(seperator, chalk.gray('Memory:     '), chalk[os.totalmem() < size(4).gb() ? 'red' : 'cyan'](`${number.round(os.totalmem() / 1024 / 1024 / 1024, 2)}GB (4GB recommended)`))

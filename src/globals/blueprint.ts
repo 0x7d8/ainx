@@ -9,7 +9,7 @@ import path from "path"
 import os from "os"
 
 export const ainxEngine = 'ainx',
-	ainxCompatibility = 'beta-2024-11'
+	ainxCompatibility = 'beta-2024-12'
 
 export function config(raw: string, excludedFlags: string[] = []): BlueprintConfig {
 	const data = yaml.load(raw)
@@ -38,9 +38,9 @@ export function bash(): string | null {
 	}
 
 	try {
-		const bash = system.execute('which bash')
+		const bash = system.execute('which bash').trim()
 
-		return fs.existsSync(bash.trim()) ? bash.trim() : null
+		return fs.existsSync(bash) ? bash : null
 	} catch {
 		return null
 	}
@@ -49,7 +49,7 @@ export function bash(): string | null {
 export function environment(conf: BlueprintConfig) {
 	return {
 		ENGINE: ainxEngine,
-		BLUEPRINT_VERSION: `ainx@${pckgVersion}`,
+		BLUEPRINT_VERSION: `ainx@${pckgVersion} ${ainxCompatibility}`,
 		BLUEPRINT_DEVELOPER: 'false',
 		BLUEPRINT_TMP: path.join(os.tmpdir(), 'ainx', 'addon'),
 		EXTENSION_TARGET: conf.info.target,
@@ -105,7 +105,7 @@ export function placeholders(conf: BlueprintConfig, input: string): string {
 			'datapath': path.join(process.cwd(), `.blueprint/extensions/${conf.info.identifier}/private`),
 			'publicpath': path.join(process.cwd(), `.blueprint/extensions/${conf.info.identifier}/public`),
 			'installmode': 'normal',
-			'blueprintversion': `ainx@${pckgVersion}`,
+			'blueprintversion': `ainx@${pckgVersion} ${ainxCompatibility}`,
 			'timestamp': Math.floor(Date.now() / 1000 - process.uptime()).toString(),
 		}
 
