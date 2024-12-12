@@ -15,6 +15,8 @@
 namespace Pterodactyl\BlueprintFramework\Libraries\ExtensionLibrary;
 
 use Illuminate\Support\Facades\DB;
+use Illuminate\Support\Collection;
+use Symfony\Component\Yaml\Yaml;
 
 class BlueprintBaseLibrary
 {
@@ -111,16 +113,22 @@ class BlueprintBaseLibrary
     return file_exists(".blueprint/extensions/$identifier");
   }
 
-  public function extensionList(): array {
-    $extensions = [];
-    $files = scandir('.blueprint/extensions');
+  public function extensions(): Collection
+  {
+    $array = scandir('.blueprint/extensions');
+    $collection = new Collection();
 
-    foreach ($files as $file) {
-      if ($file != '.' && $file != '..') {
-        $extensions[] = $file;
+    foreach ($array as $extension) {
+      if (!$extension || $extension === '.' || $extension === '..') continue;
+
+      try {
+        $conf = Yaml::parse($this->fileRead(base_path(".blueprint/extensions/$extension/private/.store/conf.yml")));
+
+        $collection->push(array_filter($conf['info'], fn($v) => (bool) $v));
+      } catch (\Throwable $e) {
       }
     }
 
-    return $extensions;
+    return $collection;
   }
 }

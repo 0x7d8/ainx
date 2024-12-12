@@ -161,6 +161,8 @@ export default async function install(args: Args, skipRoutes: boolean = false): 
 
 		if (exists(`.blueprint/extensions/${data.id}/${data.id}.ainx`) && !args.force) {
 			console.error(chalk.red('Addon already installed, upgrade instead'))
+			console.error(chalk.gray('If you updated pterodactyl, you may want to run'), chalk.cyan(`ainx install ${file} --force`))
+
 			return 1
 		}
 
@@ -209,6 +211,12 @@ export default async function install(args: Args, skipRoutes: boolean = false): 
 		await fs.promises.symlink(path.join(process.cwd(), '.blueprint/extensions', data.id, 'private'), path.join(process.cwd(), 'storage/.extensions', data.id)).catch(() => null)
 
 		console.log(chalk.gray('Linking storage files'), chalk.cyan(data.id), chalk.gray('...'), chalk.bold.green('Done'))
+
+		console.log(chalk.gray('Adding store files ...'))
+
+		await fs.promises.cp(source.path(), `.blueprint/extensions/${data.id}/private/.store`, { recursive: true, force: true })
+
+		console.log(chalk.gray('Adding store files ...'), chalk.bold.green('Done'))
 
 		const publicStat = await fs.promises.lstat(`public/extensions/${data.id}`).catch(() => null)
 		if (publicStat?.isSymbolicLink() || publicStat?.isDirectory()) {
