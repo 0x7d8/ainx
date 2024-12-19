@@ -115,7 +115,7 @@ class BlueprintBaseLibrary
 
   public function extensions(): Collection
   {
-    $array = scandir('.blueprint/extensions');
+    $array = scandir(base_path('.blueprint/extensions'));
     $collection = new Collection();
 
     foreach ($array as $extension) {

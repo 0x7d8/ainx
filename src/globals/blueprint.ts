@@ -241,16 +241,14 @@ import ScriptLibraryLogFormat from "src/compat/scripts/libraries/logFormat.sh"
 import ScriptLibraryParseYaml from "src/compat/scripts/libraries/parse_yaml.sh"
 
 const ainxAddonsRoutes = `
-                            <li class="header">AINX ADDONS</li>
-                            @foreach (File::allFiles(base_path('resources/views/admin/extensions')) as $partial)
-                                @if ($partial->getExtension() == 'php')
-                                    <li class="{{ ! starts_with(Route::currentRouteName(), 'admin.extensions.'.basename(dirname(strstr($partial->getPathname(), "extensions/"))).'.index') ?: 'active' }}">
-                                        <a href="/admin/extensions/{{ basename(dirname(strstr($partial->getPathname(), "extensions/"))) }}">
-                                            <i class="fa fa-puzzle-piece"></i> <span>{{ basename(dirname(strstr($partial->getPathname(), "extensions/"))) }}</span>
-                                        </a>
-                                    </li>
-                                @endif
-                            @endforeach
+                        <li class="header">AINX ADDONS</li>
+                        @foreach (app()->make(\\Pterodactyl\\BlueprintFramework\\Libraries\\ExtensionLibrary\\Admin\\BlueprintAdminLibrary::class)->extensions() as $extension)
+                            <li class="{{ !starts_with(Route::currentRouteName(), "admin.extensions.{$extension['identifier']}.index") ?: 'active' }}">
+                                <a href="/admin/extensions/{{ $extension['identifier'] }}">
+                                    <i class="fa fa-puzzle-piece"></i> <span>{{ $extension['name'] }}</span>
+                                </a>
+                            </li>
+                        @endforeach
 `.split('\n').slice(1, -1).join('\n')
 
 export async function insertCompatFiles() {
@@ -344,7 +342,7 @@ export async function insertCompatFiles() {
 				index = adminLayoutLines.findIndex((line) => line.includes('admin.nests'))
 
 			if (index !== -1) {
-				adminLayoutLines.splice(index + 4, 0, ainxAddonsRoutes)
+				adminLayoutLines.splice(index + 5, 0, ainxAddonsRoutes)
 			}
 
 			await fs.promises.writeFile('resources/views/layouts/admin.blade.php', adminLayoutLines.join('\n'))
