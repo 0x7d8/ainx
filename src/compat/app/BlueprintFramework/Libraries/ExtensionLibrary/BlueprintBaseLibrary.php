@@ -24,45 +24,65 @@ class BlueprintBaseLibrary
     return "$table::$record";
   }
 
-  public function dbGet(string $table, string $record, mixed $default = null): mixed {
+  public function dbGet(string $table, string $record, mixed $default = null): mixed
+  {
     $value = DB::table('settings')->where('key', $this->getRecordName($table, $record))->first();
 
-    return $value ? $value->value : $default;
+    if (!$value) return $default;
+
+    try {
+      return unserialize($value->value);
+    } catch (\Exception $e) {
+      return $value->value;
+    }
   }
 
-  public function dbGetMany(string $table, array $records = [], mixed $default = null): array {
+  public function dbGetMany(string $table, array $records = [], mixed $default = null): array
+  {
     if (empty($records)) {
       $values = DB::table('settings')->where('key', 'like', "$table::%")->get();
     } else {
       $values = DB::table('settings')->whereIn('key', array_map(fn($record) => $this->getRecordName($table, $record), $records))->get();
     }
 
-		if (empty($records)) {
+    if (empty($records)) {
       $records = $values->map(fn($value) => substr($value->key, strlen($table) + 2))->toArray();
     }
 
     $output = [];
     foreach ($records as $record) {
       $value = $values->firstWhere('key', $this->getRecordName($table, $record));
-      $output[$record] = $value ? $value->value : $default;
+
+      if (!$value) {
+        $output[$record] = $default;
+        continue;
+      }
+
+      try {
+        $output[$record] = unserialize($value->value);
+      } catch (\Exception $e) {
+        $output[$record] = $value->value;
+      }
     }
 
     return $output;
   }
 
-  public function dbSet(string $table, string $record, mixed $value): void {
+  public function dbSet(string $table, string $record, mixed $value): void
+  {
     DB::table('settings')->updateOrInsert(
       ['key' => $this->getRecordName($table, $record)],
-      ['value' => (string) $value]
+      ['value' => serialize($value)]
     );
   }
 
-  public function dbSetMany(string $table, array $records): void {
+  public function dbSetMany(string $table, array $records): void
+  {
     $data = [];
     foreach ($records as $record => $value) {
       $data[] = [
         'key' => $this->getRecordName($table, $record),
-        'value' => (string) $value
+        'value' => serialize($value),
       ];
     }
 
@@ -110,7 +130,7 @@ class BlueprintBaseLibrary
   }
 
   public function extension(string $identifier): bool {
-    return file_exists(".blueprint/extensions/$identifier");
+    return file_exists(base_path(".blueprint/extensions/$identifier"));
   }
 
   public function extensions(): Collection
