@@ -15,6 +15,7 @@ import inspect from "src/commands/inspect"
 import genpatch from "src/commands/genpatch"
 import backupCreate from "src/commands/backup/create"
 import backupRestore from "src/commands/backup/restore"
+import logs from "src/commands/logs"
 import list from "src/commands/list"
 import info from "src/commands/info"
 
@@ -292,6 +293,8 @@ yargs(hideBin(process.argv))
       default: false
     }),
   (rg) => info(rg).then(handleExit))
+  .command('logs', 'upload a panel log', (yargs) => yargs,
+  (rg) => logs(rg).then(handleExit))
   .strictCommands()
   .demandCommand(1)
   .parse()
