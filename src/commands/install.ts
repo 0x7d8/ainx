@@ -65,10 +65,11 @@ export default async function install(args: Args, skipRoutes: boolean = false): 
 		console.log(chalk.gray('Installing'), chalk.cyan(args.files.length), chalk.gray('addons ...'))
 
 		for (const file of args.files) {
-			await install({ ...args, files: [file], force: true, rebuild: false })
+			await install({ ...args, files: [file], force: true, rebuild: false, applyPermissions: false })
 		}
 
 		if (args.rebuild) await rebuild({ disableSmoothMode: args.disableSmoothMode })
+		if (args.applyPermissions) await blueprint.applyPermissions()
 
 		console.log(chalk.gray('Installing'), chalk.cyan(args.files.length), chalk.gray('addons ...'), chalk.bold.green('Done'))
 
