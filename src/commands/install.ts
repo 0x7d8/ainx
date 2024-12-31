@@ -234,12 +234,12 @@ export default async function install(args: Args, skipRoutes: boolean = false): 
 
 			console.log(chalk.gray('Adding admin controller'), chalk.cyan(conf.admin.controller), chalk.gray('...'), chalk.bold.green('Done'))
 		} else {
-			console.log(chalk.gray('Adding default admin controller'), chalk.cyan(conf.admin.controller), chalk.gray('...'))
+			console.log(chalk.gray('Adding default admin controller'), chalk.gray('...'))
 
 			await fs.promises.mkdir(`app/Http/Controllers/Admin/Extensions/${data.id}`, { recursive: true })
 			await fs.promises.writeFile(`app/Http/Controllers/Admin/Extensions/${data.id}/${data.id}ExtensionController.php`, ExtensionController.replaceAll('__identifier__', data.id))
 
-			console.log(chalk.gray('Adding default admin controller'), chalk.cyan(conf.admin.controller), chalk.gray('...'), chalk.bold.green('Done'))
+			console.log(chalk.gray('Adding default admin controller'), chalk.gray('...'), chalk.bold.green('Done'))
 		}
 
 		{
@@ -325,6 +325,12 @@ export default async function install(args: Args, skipRoutes: boolean = false): 
 			await blueprint.recursivePlaceholders(conf, path.join('.blueprint/extensions', data.id, 'public'))
 
 			console.log(chalk.gray('Linking public files'), chalk.cyan(conf.data.public), chalk.gray('...'), chalk.bold.green('Done'))
+		} else {
+			console.log(chalk.gray('Linking default public files'), chalk.gray('...'))
+
+			await fs.promises.mkdir(`public/extensions/${data.id}`, { recursive: true })
+
+			console.log(chalk.gray('Linking default public files'), chalk.gray('...'), chalk.bold.green('Done'))
 		}
 
 		if (conf.admin.css) {
