@@ -507,7 +507,7 @@ export default async function install(args: Args, skipRoutes: boolean = false): 
 			await fs.promises.cp(path.join(source.path(), conf.requests.views), `.blueprint/extensions/${data.id}/_views`, { recursive: true })
 
 			await fs.promises.mkdir('resources/views/blueprint/extensions', { recursive: true })
-			if (exists(`resources/views/blueprint/extensions/${data.id}`)) await fs.promises.rm(`resources/views/blueprint/extensions/${data.id}`, { force: true })
+			if (exists(`resources/views/blueprint/extensions/${data.id}`)) await fs.promises.rm(`resources/views/blueprint/extensions/${data.id}`, { force: true, recursive: true })
 			await fs.promises.symlink(path.join(process.cwd(), '.blueprint/extensions', data.id, '_views'), path.join(process.cwd(), 'resources/views/blueprint/extensions', data.id))
 
 			await blueprint.recursivePlaceholders(conf, `resources/views/blueprint/extensions/${data.id}`)
