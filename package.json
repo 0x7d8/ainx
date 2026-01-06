@@ -20,23 +20,28 @@
     "url": "https://github.com/0x7d8/ainx.git"
   },
   "devDependencies": {
-    "@rjweb/utils": "^1.12.27",
+    "@rjweb/utils": "^1.12.28",
     "@types/adm-zip": "^0.5.7",
     "@types/js-yaml": "^4.0.9",
-    "@types/node": "^16.18.122",
+    "@types/node": "^16.18.126",
     "@types/semver": "^7.5.8",
     "@types/yargs": "^17.0.33",
     "adm-zip": "0.5.15",
-    "axios": "^1.7.9",
-    "bun": "^1.1.42",
+    "axios": "^1.8.4",
+    "bun": "^1.2.5",
     "chalk": "^5.4.1",
     "enquirer": "^2.4.1",
     "js-yaml": "^4.1.0",
-    "semver": "^7.6.3",
+    "semver": "^7.7.1",
     "simple-git": "^3.27.0",
     "tar": "^7.4.3",
-    "typescript": "^5.7.2",
+    "typescript": "^5.8.2",
     "yargs": "^17.7.2",
-    "zod": "^3.24.1"
+    "zod": "^3.24.2"
+  },
+  "pnpm": {
+    "onlyBuiltDependencies": [
+      "bun"
+    ]
   }
 }
