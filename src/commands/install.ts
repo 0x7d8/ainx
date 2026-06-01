@@ -299,7 +299,7 @@ export default async function install(args: Args, skipRoutes: boolean = false): 
 						schedules += `$schedule->command('${data.id}:${command.Signature}')${call};\n`
 					}
 
-					const random = string.generate()
+					const random = `C${string.generate()}`
 					await fs.promises.writeFile(
 						`app/Console/Commands/BlueprintFramework/Extensions/${data.id}/${random}Command.php`,
 						ExtensionCommand.replace('__random__', random).replaceAll('__identifier__', data.id)
